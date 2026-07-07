@@ -8,12 +8,14 @@
 
 「离线时刻伴侣」会承载多款游戏。本 spec 定义它们**共享的底座**，让每款游戏都能：即插进 Session、复用同一套 UI 渲染与动画、共享存档/恢复与测试脚手架。
 
-**本 spec 只定义契约，不含任何游戏规则。** 它规定四样东西：
+**本 spec 只定义契约，不含任何游戏规则。** 它规定的东西分两层：
 
-1. 公共状态原语（`Coord` / `Grid` / `Tile` / RNG / `Codable`）
-2. **结算时间线词汇**（统一描述"棋盘上发生了什么"）
-3. **引擎协议** `GridGameEngine`（所有游戏引擎 conform）
-4. Session「活动」接口与 UI 渲染契约
+- **普遍活动契约** `SessionActivity`：Session 唯一依赖的最薄接口。任何玩法（网格 / 经营 / 文字…）conform 即可插入断网 Session。它比 GridGame 宽，因为它要容纳未来的**非网格**家族。
+- **网格玩法契约（GridGame 本体）**，`GridGameEngine` 是 `SessionActivity` 的一个特化：
+  1. 公共状态原语（`Coord` / `Grid` / `Tile` / RNG / `Codable`）
+  2. **结算时间线词汇**（统一描述"棋盘上发生了什么"）
+  3. **引擎协议** `GridGameEngine`（网格游戏引擎 conform）
+  4. UI 渲染契约
 
 落点：`Sources/GridGame/`，零第三方依赖。
 
@@ -27,20 +29,22 @@
 ## 分层
 
 ```
-┌─────────────────────────────────────────────┐
-│  UI 渲染器（SwiftUI）：消费 Beat 时间线，一套渲染所有游戏  │
-├─────────────────────────────────────────────┤
-│  Session「活动」接口：任何 GridGameEngine 都能插入        │
-├──────────────────┬──────────────────────────┤
-│  GameEngine(2048) │  Match3Engine  │  未来游戏 … │  ← 各自规则内核，独立可测
-├──────────────────┴──────────────────────────┤
-│  GridGame 基本法（本 spec）                        │
-│   Coord / Grid<Tile> / Tile<Payload>(稳定 UUID) │
-│   SeededGenerator(RNG, Codable) / Codable 状态   │
-│   结算时间线词汇：Beat { moves, spawns,           │
-│                        removals, transforms }   │
-│   引擎协议 GridGameEngine                         │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Session 外壳（只依赖 SessionActivity，不认识具体游戏）    │
+├─────────────────────────────────────────────────┤
+│  SessionActivity 普遍活动契约（真正的普遍法）             │  ← Codable 存档/恢复 + kind + summary
+│    ├─ GridGameEngine 家族（网格·操作驱动）               │
+│    │    GameEngine(2048) │ Match3Engine │ …        │  ← 各自规则内核，独立可测
+│    │    + 一套 SwiftUI 棋盘渲染器（消费 Beat 时间线）        │
+│    └─ 未来 SimEngine 家族（经营·时间驱动）… 本 spec 不设计   │
+├─────────────────────────────────────────────────┤
+│  GridGame 基本法原语（本 spec）                         │
+│   Coord / Grid<Tile> / Tile<Payload>(稳定 UUID)     │
+│   SeededGenerator(RNG, Codable) / Codable 状态       │
+│   结算时间线词汇：Beat { moves, spawns,               │
+│                        removals, transforms }       │
+│   引擎协议 GridGameEngine（: SessionActivity）         │
+└─────────────────────────────────────────────────┘
 ```
 
 ## 1. 公共状态原语
@@ -105,7 +109,7 @@ struct Transform<Payload>:      Codable { let consumed: [UUID]; let produced: UU
 ## 3. 引擎协议 `GridGameEngine`
 
 ```swift
-protocol GridGameEngine: Codable {
+protocol GridGameEngine: SessionActivity {   // SessionActivity 已含 Codable
     associatedtype Action           // 2048 = 方向；消消乐 = 交换两坐标
     associatedtype Payload: Codable & Equatable
 
@@ -122,10 +126,32 @@ protocol GridGameEngine: Codable {
 - **纯、确定、无头**：不含 UI、不碰计时器、不做 I/O。
 - **胜负/目标不在此层**：`isTerminal` 只表达"引擎自身是否还能继续"（2048 的死局）；游戏模式、目标、失败判定是引擎之上的外置规则层。
 
-## 4. Session 接口与 UI 渲染契约
+## 4. SessionActivity 普遍活动契约 与 UI 渲染契约
 
-- **Session「活动」接口**：Session 外壳只依赖 `GridGameEngine` + `Resolution`，不认识具体游戏。任何 conform 的引擎都能作为一个"活动"插进断网 Session，并自动获得存档/恢复（因 `Codable`）。
-- **UI 渲染契约**：一套 SwiftUI 棋盘渲染器消费 `Beat` 时间线，按 `Tile.id` 做位移/淡入/合并/消除动画（复用 2048 已定的稳定 UUID 动画纪律）。**一套渲染器驱动所有游戏**——这是本基本法最大的复用回报。
+### SessionActivity —— Session 唯一依赖的最薄接口
+
+Session 外壳**不认识** `GridGameEngine`，只认识 `SessionActivity`。这样网格之外的玩法（经营 `SimEngine`、文字推理…）也能插进断网 Session，而**不污染 GridGame**。
+
+```swift
+/// 真正的普遍法。任何玩法 conform 即可作为一个「活动」进入断网 Session，
+/// 并自动获得存档/恢复（因 Codable）。
+protocol SessionActivity: Codable {
+    static var kind: ActivityKind { get }   // 供 Session 路由与 UI 选择渲染器
+    var summary: ActivitySummary { get }     // 落地收尾展示的本地只读摘要（如标题/分数）
+}
+
+enum ActivityKind: String, Codable { case grid2048, match3 /* , sim… 未来扩展 */ }
+struct ActivitySummary: Codable { let headline: String; let score: Int? }
+```
+
+- **`GridGameEngine: SessionActivity`**：网格游戏免费获得活动身份；`summary` 可由 `score` 提供默认实现。
+- 未来的 `SimEngine`（经营/模拟）同样 conform `SessionActivity`，但**不** conform `GridGameEngine`——经营游戏是另一个物种（时间/经济内核），本 spec 不设计。
+- **刻意最薄**：只含 Session 收尾与路由真正需要的三样（`kind` + `summary` + `Codable`），不多。
+
+### UI 渲染契约
+
+- **网格家族**共享一套 SwiftUI 棋盘渲染器：消费 `Beat` 时间线，按 `Tile.id` 做位移/淡入/合并/消除动画（复用 2048 已定的稳定 UUID 动画纪律）。**一套渲染器驱动所有网格游戏**——这是本基本法最大的复用回报。
+- 非网格家族（如 `SimEngine`）自带各自的渲染，但仍通过 `SessionActivity` 统一接入 Session 生命周期。
 
 ## 两个引擎如何映射到基本法（证明契约不泄漏）
 
@@ -148,7 +174,8 @@ protocol GridGameEngine: Codable {
 
 - **不在基本法里写任何游戏规则**（不写匹配、不写合并、不写滑动）。
 - **不做共享规则引擎 / 上帝引擎。**
-- **保持薄**：两个实例是"看见模式"的最小样本；只固化已被两方证明的公共契约，不为想象中的第三款游戏预留花哨扩展点（第三款出现时再演进）。
+- **保持薄**：两个实例是"看见模式"的最小样本；只固化已被两方证明的公共契约，不为想象中的第三款网格游戏预留花哨扩展点（第三款出现时再演进）。
+- **`SessionActivity` 比 GridGame 宽是有意的**：这是两个不同的轴——它为**解耦**而存在（让非网格家族也能接 Session），只含 Session 真正需要的三样（`kind`/`summary`/`Codable`），不是投机扩展点；GridGame 本体仍保持窄。
 - 不含 UI / 动画时长 / 持久化 I/O（那些消费本契约，不属于本层）。
 
 ## 测试
