@@ -12,10 +12,8 @@ enum Shell {
     static let ink = Color(hex: 0xF2ECE0)
     /// 弱墨：次要文字与 mono 微标签。
     static let mutedInk = Color(hex: 0x8C857A)
-    /// 单一点缀：深黄铜。每屏至多出现一次（时间 hairline / 已解锁小点）。
+    /// 单一点缀：深黄铜。每屏至多出现一次（时间 hairline / 选中下划线）。
     static let accent = Color(hex: 0xC9A227)
-    /// 极细分隔线。
-    static let hairline = Color(hex: 0xF2ECE0, alpha: 0.12)
 
     static let radius: CGFloat = 12
 }
@@ -55,11 +53,10 @@ struct ShellPrimaryButtonStyle: ButtonStyle {
 
 /// 幽灵按钮：纯文字、弱墨，用于次级与「不打扰」的退让动作。
 struct ShellGhostButtonStyle: ButtonStyle {
-    var emphasized: Bool = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 15, weight: .regular))
-            .foregroundStyle(emphasized ? Shell.ink : Shell.mutedInk)
+            .foregroundStyle(Shell.mutedInk)
             .opacity(configuration.isPressed ? 0.55 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }

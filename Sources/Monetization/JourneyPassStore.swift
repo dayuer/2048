@@ -26,10 +26,10 @@ final class JourneyPassStore {
     init(storage: GameStorage) {
         self.storage = storage
         self.isUnlocked = storage.journeyPassUnlocked
-        // 监听交易更新（如其它设备恢复购买）。
+        // 监听交易更新：其它设备恢复购买、Ask-to-Buy 批准，以及**退款/撤销**（带 revocationDate）。
         updatesTask = Task { [weak self] in
             for await update in Transaction.updates {
-                await self?.applyEntitlement(verification: update)
+                await self?.process(update)
             }
         }
     }
@@ -43,13 +43,14 @@ final class JourneyPassStore {
         product = first
     }
 
-    /// 发起购买。成功→写入本地权益（离线可用）。
+    /// 发起购买。成功→写入本地权益（离线可用）。校验失败明确抛错供 UI 区分。
     func purchase() async throws {
         guard let product else { throw PurchaseError.productUnavailable }
         let result = try await product.purchase()
         switch result {
         case .success(let verification):
-            try await handle(verification: verification, finishing: true)
+            guard case .verified = verification else { throw PurchaseError.verificationFailed }
+            await process(verification)
         case .userCancelled:
             throw PurchaseError.userCancelled
         case .pending:
@@ -59,10 +60,12 @@ final class JourneyPassStore {
         }
     }
 
-    /// 恢复购买/联网校验：扫描当前权益，同步本地状态。
+    /// 恢复购买 / 联网校验：扫描当前权益并同步。
+    /// 只增不减（`currentEntitlements` 只含未撤销的权益）——保证已购用户离线时绝不被误锁；
+    /// 撤销/退款由 `Transaction.updates` 流负责重新落锁（见 `process`）。
     func refreshEntitlements() async {
         for await entitlement in Transaction.currentEntitlements {
-            await applyEntitlement(verification: entitlement)
+            await process(entitlement)
         }
     }
 
@@ -72,22 +75,13 @@ final class JourneyPassStore {
         await refreshEntitlements()
     }
 
-    /// 校验一笔交易并落地权益（非 finishing 路径）。
-    private func applyEntitlement(verification: VerificationResult<Transaction>) async {
+    /// 校验并落地一笔交易的权益状态，然后 finish（避免更新流反复重投）。
+    /// 撤销/退款的交易带 `revocationDate` → 落锁；有效交易 → 解锁。
+    private func process(_ verification: VerificationResult<Transaction>) async {
         guard case .verified(let transaction) = verification,
-              transaction.productID == Self.productID,
-              transaction.revocationDate == nil else { return }
-        setUnlocked(true)
-    }
-
-    /// throwing 版本，供购买路径区分校验失败。
-    private func handle(verification: VerificationResult<Transaction>, finishing: Bool) async throws {
-        guard case .verified(let transaction) = verification else {
-            throw PurchaseError.verificationFailed
-        }
-        guard transaction.productID == Self.productID else { return }
-        setUnlocked(true)
-        if finishing { await transaction.finish() }
+              transaction.productID == Self.productID else { return }
+        setUnlocked(transaction.revocationDate == nil)
+        await transaction.finish()
     }
 
     private func setUnlocked(_ value: Bool) {

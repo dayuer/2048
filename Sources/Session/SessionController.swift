@@ -51,9 +51,14 @@ final class SessionController {
         storage.currentSession = nil
     }
 
-    /// 当前净活跃时长（秒），供收尾统计展示。
+    /// 当前净活跃时长（秒），扣除暂停。落地后冻结。
     func elapsedActiveTime() -> TimeInterval {
         session?.elapsedActiveTime(at: now()) ?? 0
+    }
+
+    /// 断网时段的墙钟时长（秒），含暂停。落地后冻结。收尾「分钟离线」用它。
+    func elapsedWallTime() -> TimeInterval {
+        session?.elapsedWallTime(at: now()) ?? 0
     }
 
     private func persist() {

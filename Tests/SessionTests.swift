@@ -62,6 +62,27 @@ import Testing
         #expect(session.elapsedActiveTime(at: t0.addingTimeInterval(300)) == 100)
     }
 
+    @Test func elapsedTimeFreezesAfterLanding() {
+        var session = Session(startedAt: t0)
+        session.begin(at: t0)
+        session.land(at: t0.addingTimeInterval(1200))
+        // 落地后即使时钟继续前进（用户停留在收尾页），时长应冻结在落地时刻。
+        let muchLater = t0.addingTimeInterval(9999)
+        #expect(session.elapsedWallTime(at: muchLater) == 1200)
+        #expect(session.elapsedActiveTime(at: muchLater) == 1200)
+    }
+
+    @Test func wallTimeIncludesPausedSpans() {
+        var session = Session(startedAt: t0)
+        session.begin(at: t0)
+        session.pause(at: t0.addingTimeInterval(600))
+        session.resume(at: t0.addingTimeInterval(900)) // 暂停 300 秒
+        session.land(at: t0.addingTimeInterval(1500))
+        // 墙钟时长含暂停 = 1500；净活跃时长扣除暂停 = 1200。
+        #expect(session.elapsedWallTime(at: t0.addingTimeInterval(9999)) == 1500)
+        #expect(session.elapsedActiveTime(at: t0.addingTimeInterval(9999)) == 1200)
+    }
+
     @Test func codableRoundTrip() throws {
         var session = Session(startedAt: t0, plannedDuration: 45 * 60)
         session.begin(at: t0)

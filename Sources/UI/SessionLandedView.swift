@@ -55,6 +55,6 @@ struct SessionLandedView: View {
     }
 
     private var minutes: Int {
-        Int(controller.elapsedActiveTime()) / 60
+        Int(controller.elapsedWallTime()) / 60
     }
 }

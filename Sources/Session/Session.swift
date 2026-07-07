@@ -27,6 +27,8 @@ struct Session: Codable, Equatable, Sendable {
     private(set) var pausedAt: Date?
     /// 已累计的暂停总时长（秒），用于从墙钟时间中扣除。
     private(set) var accumulatedPause: TimeInterval
+    /// 落地时刻。非 nil 后所有时长计算冻结在此刻（收尾统计不随停留而继续增长）。
+    private(set) var landedAt: Date?
 
     init(id: UUID = UUID(), startedAt: Date, plannedDuration: TimeInterval? = nil) {
         self.id = id
@@ -36,6 +38,7 @@ struct Session: Codable, Equatable, Sendable {
         self.activityLog = []
         self.pausedAt = nil
         self.accumulatedPause = 0
+        self.landedAt = nil
     }
 
     /// 进入 active，并登记本次 Session 的 Hero 活动（2048）。
@@ -58,13 +61,14 @@ struct Session: Codable, Equatable, Sendable {
         self.pausedAt = nil
     }
 
-    /// 进入 landed，收束所有未结束的活动。
+    /// 进入 landed，收束所有未结束的活动，并冻结时长于此刻。
     mutating func land(at now: Date) {
         guard state == .active else { return }
         if pausedAt != nil { resume(at: now) }
         for index in activityLog.indices where activityLog[index].endedAt == nil {
             activityLog[index].endedAt = now
         }
+        landedAt = now
         state = .landed
     }
 
@@ -73,10 +77,19 @@ struct Session: Codable, Equatable, Sendable {
         state = .closed
     }
 
-    /// 截至 `now` 的净活跃时长（秒），扣除全部暂停区间。
+    /// 计算截止时刻：落地后冻结在 landedAt，否则用传入的 now。
+    private func effectiveEnd(_ now: Date) -> Date { landedAt ?? now }
+
+    /// 断网时段的墙钟时长（秒）：从开始到（落地或现在），含暂停。收尾统计「分钟离线」用它。
+    func elapsedWallTime(at now: Date) -> TimeInterval {
+        max(0, effectiveEnd(now).timeIntervalSince(startedAt))
+    }
+
+    /// 净活跃时长（秒），扣除全部暂停区间。落地后冻结。
     func elapsedActiveTime(at now: Date) -> TimeInterval {
-        let wall = now.timeIntervalSince(startedAt)
-        let currentPause = pausedAt.map { now.timeIntervalSince($0) } ?? 0
+        let end = effectiveEnd(now)
+        let wall = end.timeIntervalSince(startedAt)
+        let currentPause = pausedAt.map { end.timeIntervalSince($0) } ?? 0
         return max(0, wall - accumulatedPause - currentPause)
     }
 }
