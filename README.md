@@ -1,6 +1,6 @@
-# 2048 · 离线时刻伴侣
+# 2048 · 无服务器近场社交游戏
 
-一个本地优先的「离线 Session（断网时段）」伴侣，以经典 [2048](https://github.com/gabrielecirulli/2048) 为第一个核心玩法。卖的不是游戏，而是「被好好度过的断网时间」——无广告、无账号、无云端牵引。
+一个隐私优先、永远有得玩的休闲游戏 app：随时跟本地 AI 对手来一局，身边有人时还能近场直连对战。以经典 [2048](https://github.com/gabrielecirulli/2048) 为第一个游戏插件。无广告、无账号、无云端——数据不出设备。
 
 ## 2048 本体
 
@@ -10,14 +10,17 @@
 - 断点续玩：退出后自动恢复上次局面
 - iPhone + iPad 通用，支持外接键盘方向键，最低 iOS 17
 
-## 离线时刻伴侣 V1（Session 外壳）
+## V2 外壳（WhatsApp 式四 tab）
 
-在 2048 之上生长出的「断网时间容器」，美学走「墨上留白（Ink-on-Void）」：深墨底、暖白墨、单一克制的黄铜点缀，安静、克制、无红点无 badge。
+外壳走微信风视觉（浅灰页 / 白卡 / 发丝分隔 / 微信绿主行动），对话是脊柱：
 
-- **Session 主轴**：`setup`（开始一个断网时段，可选设时长）→ `active`（安静环境，2048 承载其中）→ `landed`（克制的「你已落地」+ 本地统计 + 自愿同步）。
-- **进度绝不丢失**：pause/resume 与切后台每步立即存档。
-- **诚实变现 Journey Pass**：StoreKit 2 一次性买断，**永久解锁 Session 模式**；**2048 本体永久免费，永不被付费墙拦住**。权益本地持久化，此后完全离线可用，支持恢复购买。
-- **可选离线轻提示**：`NWPathMonitor` 检测到离线时轻提示「要开始一个 Session 吗？」，可永久关闭，绝不强依赖飞行检测。
+- **四 tab**：对话 / 附近 / 游戏 / 我。
+- **AI 对手常驻置顶**：对话列表顶部是本地 AI 对手线程，随时「开战」——永远不用等人。（真 expectimax 对手在 Phase 1b 接入；当前「开战」进入真实可玩的单人 2048。）
+- **游戏即插件**：全部长在 `GridGame` 基本法（`Sources/GridGame/`）上，同一引擎契约 `GridGameEngine`。2048 是第一个插件，`GameRegistry` 编译期静态注册。
+- **附近 / 真人对战 / 私聊**：蓝牙近场发现（B）、实时 1v1 对战（C）、1:1 私聊（D）后续接入；附近 tab 当前为引导态。
+- **临时身份**：本机可重掷昵称，无账号、数据不出设备。
+
+> `Sources/Monetization/`（Journey Pass 买断）保留编译但暂无入口——变现锚点后续迁移到「游戏内容 / +」。设计脉络见 `docs/superpowers/specs/2026-07-08-product-strategy.md`。
 
 ## 构建
 
@@ -52,14 +55,15 @@ xcodebuild test -project Game2048.xcodeproj -scheme Game2048 \
 
 ```
 Sources/
-├── App/            # 入口、entitlements、图标
+├── App/            # 入口（TabShellView 根）、entitlements、图标
 ├── GridGame/       # 基本法底座：状态原语 + Beat 结算时间线 + SessionActivity/GridGameEngine 契约（零游戏规则）
 ├── Engine/         # 2048 规则内核（GridGameEngine 特化；纯逻辑、Codable、RNG 状态随档）
-├── Session/        # 断网时段状态机 + SessionController 编排 + 离线提示（纯逻辑，可单测）
-├── Monetization/   # Journey Pass（StoreKit 2 非消耗型 IAP，权益本地持久化）
-├── Persistence/    # UserDefaults 存档（局面 / Session / Pass 权益）
-├── GameCenter/     # GameKit 认证与排行榜（Session 语境下自愿、非门槛）
-└── UI/             # SwiftUI 视图：2048 本体 + Session 外壳（墨上留白）
+├── Games/          # 游戏插件注册表：GamePlugin 描述符 + GameRegistry（编译期静态，2048 首个）
+├── Chat/           # 对话线程与事件（ChatThread/ThreadEvent/ChatStore，纯本地文件 JSON）
+├── Monetization/   # Journey Pass（StoreKit 2 非消耗型 IAP）——保留编译、暂无入口（变现停车场）
+├── Persistence/    # UserDefaults 存档（局面 / 最高分 / 最大方块 / Pass 权益 / 临时昵称）
+├── GameCenter/     # GameKit 认证与排行榜
+└── UI/             # SwiftUI：四 tab 外壳（对话/附近/游戏/我）+ 线程/事件卡 + 2048 本体 + 微信风设计系统
 Config/             # JourneyPass.storekit 本地测试配置
 Tests/              # Swift Testing 单元测试
 ```
