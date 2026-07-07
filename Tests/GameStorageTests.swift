@@ -33,4 +33,12 @@ import Testing
         storage.gameState = nil
         #expect(storage.gameState == nil)
     }
+
+    @Test func nicknameRoundTrip() {
+        #expect(storage.nickname == nil)
+        storage.nickname = "旅人42"
+        #expect(storage.nickname == "旅人42")
+        storage.nickname = nil
+        #expect(storage.nickname == nil)
+    }
 }

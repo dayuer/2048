@@ -3,11 +3,13 @@ import SwiftUI
 struct GameView: View {
     @State private var gameCenter: GameCenterManager
     @State private var viewModel: GameViewModel
+    private let onExit: (() -> Void)?
 
-    init() {
+    init(onExit: (() -> Void)? = nil) {
         let gameCenter = GameCenterManager()
         _gameCenter = State(initialValue: gameCenter)
         _viewModel = State(initialValue: GameViewModel(gameCenter: gameCenter))
+        self.onExit = onExit
     }
 
     var body: some View {
@@ -73,6 +75,17 @@ struct GameView: View {
 
     private var toolbar: some View {
         HStack {
+            if let onExit {
+                Button(action: onExit) {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Theme.lightText)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Theme.button, in: RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+            }
             Spacer()
             Button {
                 viewModel.showLeaderboard()
