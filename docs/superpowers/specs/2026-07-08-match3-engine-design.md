@@ -3,6 +3,7 @@
 日期：2026-07-08
 仓库：https://github.com/dayuer/2048.git
 所属：Game #2 子项目 —— 「离线时刻伴侣」的第二款玩法（见 [离线时刻伴侣 V1 设计](2026-07-07-offline-session-companion-design.md)）
+遵循：[GridGame 公共底座（基本法）](2026-07-08-gridgame-foundation-design.md)。`Match3Engine` conform `GridGameEngine`；本文的 `ResolutionStep` 即基本法的 `Beat`，`MoveOutcome.resolved` 即 `Resolution`。
 
 ## 范围
 

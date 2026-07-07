@@ -27,6 +27,8 @@
 
 ## 架构
 
+> 遵循 [GridGame 公共底座（基本法）](2026-07-08-gridgame-foundation-design.md)：`GameEngine` conform `GridGameEngine`，`MoveResult` 对齐为基本法的 `Resolution`/`Beat`（滑动→`moves`、合并→`transforms`、生成→`spawns`）。
+
 四层模块，游戏逻辑与 UI 完全分离：
 
 ```
