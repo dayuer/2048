@@ -71,7 +71,7 @@ import Testing
     @Test func startsInSetup() {
         let session = Session(startedAt: t0, plannedDuration: 30 * 60)
         #expect(session.state == .setup)
-        #expect(session.plannedDuration == 30 * 60)
+        #expect(session.plannedDuration == 30.0 * 60) // Double 字面量：避免 Swift Testing 宏对 Double? == Int 的异构比较误报
         #expect(session.activityLog.isEmpty)
     }
 
