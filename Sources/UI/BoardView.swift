@@ -24,7 +24,11 @@ struct BoardView: View {
                 ForEach(tiles) { tile in
                     TileView(tile: tile, cellSize: cellSize)
                         .offset(offset(for: tile.position, cellSize: cellSize, spacing: spacing))
-                        .transition(.scale(scale: 0.3).combined(with: .opacity))
+                        // 出现时轻柔淡入放大；移除立即消失，避免合并处的收缩闪烁
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.6).combined(with: .opacity),
+                            removal: .identity
+                        ))
                 }
             }
         }

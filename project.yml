@@ -5,7 +5,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "XN9KPBCH6J"
     CODE_SIGN_STYLE: Automatic
 targets:
   Game2048:
@@ -15,7 +15,7 @@ targets:
       - Sources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.dayuer.game2048
+        PRODUCT_BUNDLE_IDENTIFIER: com.dayuer.above
         CODE_SIGN_ENTITLEMENTS: Sources/App/Game2048.entitlements
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

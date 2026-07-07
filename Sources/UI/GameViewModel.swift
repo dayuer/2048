@@ -44,7 +44,8 @@ final class GameViewModel {
 
         Task {
             try? await Task.sleep(for: .milliseconds(100))
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.55)) {
+            // 无过冲的 easeOut：合并/新方块淡入放大，不回弹
+            withAnimation(.easeOut(duration: 0.15)) {
                 displayTiles = engine.tiles
             }
             finishMove(result)
@@ -79,7 +80,7 @@ final class GameViewModel {
         storage.gameState = nil
         engine = GameEngine.newGame(using: &rng)
         overlay = .none
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+        withAnimation(.easeOut(duration: 0.2)) {
             displayTiles = engine.tiles
         }
     }

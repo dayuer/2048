@@ -37,11 +37,11 @@ private struct FloatingScoreView: View {
     var body: some View {
         Text("+\(value)")
             .font(.headline.bold())
-            .foregroundStyle(Theme.text.opacity(0.9))
-            .offset(y: animate ? -38 : 0)
+            .foregroundStyle(Theme.text.opacity(0.7))
+            .offset(y: animate ? -26 : 0)
             .opacity(animate ? 0 : 1)
             .onAppear {
-                withAnimation(.easeOut(duration: 0.6)) { animate = true }
+                withAnimation(.easeOut(duration: 0.9)) { animate = true }
             }
             .allowsHitTesting(false)
     }
