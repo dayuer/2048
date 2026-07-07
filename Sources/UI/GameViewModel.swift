@@ -38,14 +38,15 @@ final class GameViewModel {
         guard !isAnimating, let result = engine.move(direction, using: &rng) else { return }
         isAnimating = true
 
-        withAnimation(.easeInOut(duration: 0.1)) {
+        // easeOut：减速滑入、平稳到位
+        withAnimation(.easeOut(duration: 0.1)) {
             displayTiles = result.slidTiles
         }
 
         Task {
             try? await Task.sleep(for: .milliseconds(100))
-            // 无过冲的 easeOut：合并/新方块淡入放大，不回弹
-            withAnimation(.easeOut(duration: 0.15)) {
+            // 合并/新方块纯淡入，无弹跳
+            withAnimation(.easeOut(duration: 0.12)) {
                 displayTiles = engine.tiles
             }
             finishMove(result)

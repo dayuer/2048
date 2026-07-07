@@ -19,7 +19,6 @@ struct ScoreBoxView: View {
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .contentTransition(.numericText(value: Double(value)))
         }
         .frame(minWidth: 72)
         .padding(.horizontal, 12)
