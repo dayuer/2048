@@ -13,6 +13,8 @@ targets:
     platform: iOS
     sources:
       - Sources
+      - path: Config/JourneyPass.storekit
+        buildPhase: none
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dayuer.above
@@ -41,6 +43,7 @@ targets:
       - Tests
     dependencies:
       - target: Game2048
+      - sdk: StoreKitTest.framework
 schemes:
   Game2048:
     build:
@@ -48,7 +51,9 @@ schemes:
         Game2048: all
     run:
       config: Debug
+      storeKitConfiguration: Config/JourneyPass.storekit
     test:
       config: Debug
+      storeKitConfiguration: Config/JourneyPass.storekit
       targets:
         - Game2048Tests

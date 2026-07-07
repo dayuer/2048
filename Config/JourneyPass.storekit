@@ -1,0 +1,31 @@
+{
+  "identifier" : "A1B2C3D4",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "JP0000000001",
+      "localizations" : [
+        {
+          "description" : "永久解锁 Session 模式：仪式容器、安静环境、落地收尾与本地统计。2048 本体始终免费。",
+          "displayName" : "Journey Pass",
+          "locale" : "zh_CN"
+        }
+      ],
+      "productID" : "com.dayuer.above.journeypass",
+      "referenceName" : "Journey Pass",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "L9YRXEKYN2",
+    "_failTransactionsEnabled" : false
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
