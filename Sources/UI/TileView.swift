@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct TileView: View {
-    let tile: Tile
+    let value: Int
     let cellSize: CGFloat
 
     private var fontSize: CGFloat {
-        switch String(tile.value).count {
+        switch String(value).count {
         case ...2: cellSize * 0.52
         case 3: cellSize * 0.42
         case 4: cellSize * 0.34
@@ -15,11 +15,11 @@ struct TileView: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cellSize * 0.06)
-            .fill(Theme.tileColor(tile.value))
+            .fill(Theme.tileColor(value))
             .overlay(
-                Text(verbatim: String(tile.value))
+                Text(verbatim: String(value))
                     .font(.system(size: fontSize, weight: .bold))
-                    .foregroundStyle(Theme.tileTextColor(tile.value))
+                    .foregroundStyle(Theme.tileTextColor(value))
                     .lineLimit(1)
                     .minimumScaleFactor(0.4)
                     .padding(cellSize * 0.05)

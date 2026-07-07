@@ -2,151 +2,181 @@ import Foundation
 import Testing
 @testable import Game2048
 
-func makeTile(_ value: Int, _ x: Int, _ y: Int) -> Tile {
-    Tile(value: value, position: Position(x: x, y: y))
+/// 按 (value, row, col) 摆盘。
+func makeGrid(_ entries: [(value: Int, row: Int, col: Int)]) -> Grid<Int> {
+    var grid = Grid<Int>(rows: GameEngine.size, cols: GameEngine.size)
+    for entry in entries {
+        grid[Coord(row: entry.row, col: entry.col)] = Tile(payload: entry.value)
+    }
+    return grid
+}
+
+func makeEngine(
+    _ entries: [(value: Int, row: Int, col: Int)],
+    won: Bool = false,
+    seed: UInt64 = 42
+) -> GameEngine {
+    GameEngine(grid: makeGrid(entries), won: won, rng: SeededGenerator(seed: seed))
+}
+
+/// 网格形状（坐标→数值），忽略 UUID。
+func shape(_ grid: Grid<Int>) -> [Coord: Int] {
+    Dictionary(uniqueKeysWithValues: grid.occupied.map { ($0.coord, $0.tile.payload) })
 }
 
 @Suite struct DirectionTests {
     @Test func vectors() {
-        #expect(Direction.up.vector == (0, -1))
-        #expect(Direction.down.vector == (0, 1))
-        #expect(Direction.left.vector == (-1, 0))
-        #expect(Direction.right.vector == (1, 0))
+        #expect(Direction.up.vector == (-1, 0))
+        #expect(Direction.down.vector == (1, 0))
+        #expect(Direction.left.vector == (0, -1))
+        #expect(Direction.right.vector == (0, 1))
     }
 }
 
 @Suite struct GameEngineMoveTests {
-    var rng = SeededRNG(state: 42)
-
-    @Test mutating func slideToEdge() {
-        var engine = GameEngine(tiles: [makeTile(2, 3, 0)])
-        let result = engine.move(.left, using: &rng)
-        #expect(result != nil)
-        #expect(engine.tiles.contains { $0.value == 2 && $0.position == Position(x: 0, y: 0) })
-        #expect(engine.tiles.count == 2) // 移动后生成一个新方块
+    @Test func slideToEdge() {
+        var engine = makeEngine([(2, 0, 3)])
+        let movingID = engine.grid[Coord(row: 0, col: 3)]!.id
+        let resolution = engine.apply(.left)
+        #expect(resolution.beats.count == 2)
+        #expect(resolution.beats[0].moves == [Move(
+            id: movingID, from: Coord(row: 0, col: 3), to: Coord(row: 0, col: 0)
+        )])
+        #expect(engine.grid[Coord(row: 0, col: 0)]?.payload == 2)
+        #expect(engine.grid.occupied.count == 2) // 移动后生成一个新方块
+        #expect(resolution.beats[1].spawns.count == 1)
     }
 
-    @Test mutating func mergeEqualTiles() {
-        var engine = GameEngine(tiles: [makeTile(2, 0, 0), makeTile(2, 3, 0)])
-        let result = engine.move(.left, using: &rng)
-        #expect(result?.scoreGained == 4)
+    @Test func mergeEqualTiles() {
+        var engine = makeEngine([(2, 0, 0), (2, 0, 3)])
+        let resolution = engine.apply(.left)
+        #expect(resolution.scoreDelta == 4)
         #expect(engine.score == 4)
-        #expect(engine.tiles.contains { $0.value == 4 && $0.position == Position(x: 0, y: 0) })
-        #expect(engine.tiles.count == 2) // 合并结果 + 新生成
+        #expect(engine.grid[Coord(row: 0, col: 0)]?.payload == 4)
+        #expect(engine.grid.occupied.count == 2) // 合并结果 + 新生成
+        let transforms = resolution.beats[0].transforms
+        #expect(transforms.count == 1)
+        #expect(transforms[0].at == Coord(row: 0, col: 0))
+        #expect(transforms[0].payload == 4)
+        #expect(transforms[0].consumed.count == 2)
     }
 
-    @Test mutating func quadRowMergesToPairs() {
-        var engine = GameEngine(tiles: [
-            makeTile(2, 0, 0), makeTile(2, 1, 0), makeTile(2, 2, 0), makeTile(2, 3, 0),
-        ])
-        let result = engine.move(.left, using: &rng)
-        #expect(result?.scoreGained == 8)
-        let rowValues = engine.tiles.filter { $0.position.y == 0 && $0.position.x < 2 }.map(\.value)
-        #expect(rowValues.sorted() == [4, 4]) // 不是 [8]
+    @Test func quadRowMergesToPairs() {
+        var engine = makeEngine([(2, 0, 0), (2, 0, 1), (2, 0, 2), (2, 0, 3)])
+        let resolution = engine.apply(.left)
+        #expect(resolution.scoreDelta == 8)
+        #expect(engine.grid[Coord(row: 0, col: 0)]?.payload == 4) // 不是 [8]
+        #expect(engine.grid[Coord(row: 0, col: 1)]?.payload == 4)
     }
 
-    @Test mutating func noDoubleMergeInOneMove() {
-        var engine = GameEngine(tiles: [makeTile(2, 0, 0), makeTile(2, 1, 0), makeTile(4, 2, 0)])
-        _ = engine.move(.left, using: &rng)
-        #expect(!engine.tiles.contains { $0.value == 8 })
-        #expect(engine.tiles.contains { $0.value == 4 && $0.position == Position(x: 0, y: 0) })
-        #expect(engine.tiles.contains { $0.value == 4 && $0.position == Position(x: 1, y: 0) })
+    @Test func noDoubleMergeInOneMove() {
+        var engine = makeEngine([(2, 0, 0), (2, 0, 1), (4, 0, 2)])
+        _ = engine.apply(.left)
+        #expect(!engine.grid.occupied.contains { $0.tile.payload == 8 })
+        #expect(engine.grid[Coord(row: 0, col: 0)]?.payload == 4)
+        #expect(engine.grid[Coord(row: 0, col: 1)]?.payload == 4)
     }
 
-    @Test mutating func noMoveReturnsNilAndSpawnsNothing() {
-        var engine = GameEngine(tiles: [makeTile(2, 0, 0), makeTile(4, 1, 0)])
-        let result = engine.move(.left, using: &rng)
-        #expect(result == nil)
-        #expect(engine.tiles.count == 2)
-        #expect(engine.score == 0)
+    @Test func noMoveReturnsEmptyResolutionAndKeepsState() {
+        var engine = makeEngine([(2, 0, 0), (4, 0, 1)])
+        let before = engine
+        let resolution = engine.apply(.left)
+        #expect(resolution.beats.isEmpty)
+        #expect(resolution.scoreDelta == 0)
+        #expect(engine == before) // 含 RNG 状态在内完全不变
     }
 
-    @Test mutating func mergeTo2048SetsWon() {
-        var engine = GameEngine(tiles: [makeTile(1024, 0, 0), makeTile(1024, 1, 0)])
-        _ = engine.move(.left, using: &rng)
+    @Test func mergeTo2048SetsWon() {
+        var engine = makeEngine([(1024, 0, 0), (1024, 0, 1)])
+        _ = engine.apply(.left)
         #expect(engine.won)
     }
 
-    @Test mutating func slidTilesReportIntermediatePositions() {
-        var engine = GameEngine(tiles: [makeTile(2, 0, 0), makeTile(2, 3, 0)])
-        let result = engine.move(.left, using: &rng)
-        // 滑动阶段：两个原方块都汇聚到 (0,0)，供 UI 做位移动画
-        let slid = result!.slidTiles
-        #expect(slid.count == 2)
-        #expect(slid.allSatisfy { $0.position == Position(x: 0, y: 0) })
-        #expect(result!.mergedTiles.count == 1)
-        #expect(result!.mergedTiles[0].value == 4)
+    @Test func mergeTimelineConvergesConsumedTilesToTarget() {
+        var engine = makeEngine([(2, 0, 0), (2, 0, 3)])
+        let movingID = engine.grid[Coord(row: 0, col: 3)]!.id
+        let stayingID = engine.grid[Coord(row: 0, col: 0)]!.id
+        let resolution = engine.apply(.left)
+        // 滑动拍：移动方位移到目标格；合并双方都被 transform 消耗
+        let beat = resolution.beats[0]
+        #expect(beat.moves == [Move(id: movingID, from: Coord(row: 0, col: 3), to: Coord(row: 0, col: 0))])
+        #expect(Set(beat.transforms[0].consumed) == Set([movingID, stayingID]))
+        #expect(beat.transforms[0].produced == engine.grid[Coord(row: 0, col: 0)]!.id)
     }
 }
 
 @Suite struct GameEngineStateTests {
-    var rng = SeededRNG(state: 7)
-
-    @Test func movesAvailableWithEmptyCell() {
-        let engine = GameEngine(tiles: [makeTile(2, 0, 0)])
+    @Test func notTerminalWithEmptyCell() {
+        let engine = makeEngine([(2, 0, 0)])
         #expect(engine.movesAvailable)
+        #expect(!engine.isTerminal)
     }
 
-    @Test func movesAvailableOnFullBoardWithMatch() {
-        // 满盘：其余格子值互不相同，仅 (0,0) 和 (1,0) 相等
-        var tiles: [Tile] = [makeTile(2, 0, 0), makeTile(2, 1, 0)]
+    @Test func notTerminalOnFullBoardWithMatch() {
+        // 满盘：其余格子值互不相同，仅 (0,0) 和 (0,1) 相等
+        var entries: [(value: Int, row: Int, col: Int)] = [(2, 0, 0), (2, 0, 1)]
         var value = 4
-        for y in 0..<4 {
-            for x in 0..<4 where !(y == 0 && x < 2) {
-                tiles.append(makeTile(value, x, y))
+        for row in 0..<4 {
+            for col in 0..<4 where !(row == 0 && col < 2) {
+                entries.append((value, row, col))
                 value *= 2
             }
         }
-        let engine = GameEngine(tiles: tiles)
+        let engine = makeEngine(entries)
         #expect(engine.movesAvailable)
     }
 
-    @Test func noMovesOnCheckerboard() {
+    @Test func terminalOnCheckerboard() {
         // 棋盘格交替 2/4：无空格且无相邻同值
-        var tiles: [Tile] = []
-        for y in 0..<4 {
-            for x in 0..<4 {
-                tiles.append(makeTile((x + y) % 2 == 0 ? 2 : 4, x, y))
+        var entries: [(value: Int, row: Int, col: Int)] = []
+        for row in 0..<4 {
+            for col in 0..<4 {
+                entries.append(((row + col) % 2 == 0 ? 2 : 4, row, col))
             }
         }
-        let engine = GameEngine(tiles: tiles)
-        #expect(!engine.movesAvailable)
+        let engine = makeEngine(entries)
+        #expect(engine.isTerminal)
     }
 
     @Test func terminatedWhenWonWithoutKeepPlaying() {
-        var engine = GameEngine(tiles: [makeTile(2, 0, 0)], won: true)
+        var engine = makeEngine([(2, 0, 0)], won: true)
         #expect(engine.isTerminated)
         engine.continueAfterWin()
         #expect(!engine.isTerminated)
     }
 
-    @Test mutating func terminatedEngineIgnoresMoves() {
-        var engine = GameEngine(tiles: [makeTile(2, 3, 0)], over: true)
-        #expect(engine.move(.left, using: &rng) == nil)
+    @Test func terminatedEngineIgnoresMoves() {
+        var engine = makeEngine([(2, 0, 3)], won: true)
+        #expect(engine.apply(.left).beats.isEmpty)
     }
 
-    @Test mutating func newGameHasTwoStartTiles() {
-        let engine = GameEngine.newGame(using: &rng)
-        #expect(engine.tiles.count == 2)
-        #expect(engine.tiles.allSatisfy { $0.value == 2 || $0.value == 4 })
-        #expect(engine.tiles[0].position != engine.tiles[1].position)
+    @Test func seededInitHasTwoStartTiles() {
+        let engine = GameEngine(seed: 7)
+        #expect(engine.grid.occupied.count == 2)
+        #expect(engine.grid.occupied.allSatisfy { $0.tile.payload == 2 || $0.tile.payload == 4 })
         #expect(engine.score == 0)
     }
 
+    @Test func sameSeedSameOpening() {
+        #expect(shape(GameEngine(seed: 5).grid) == shape(GameEngine(seed: 5).grid))
+    }
+
     @Test func biggestTile() {
-        let engine = GameEngine(tiles: [makeTile(2, 0, 0), makeTile(512, 1, 0)])
+        let engine = makeEngine([(2, 0, 0), (512, 0, 1)])
         #expect(engine.biggestTile == 512)
     }
 
-    @Test func codableRoundTrip() throws {
-        var rng = SeededRNG(state: 1)
-        var engine = GameEngine.newGame(using: &rng)
-        _ = engine.move(.left, using: &rng)
+    @Test func codableRoundTripPreservesStateAndRNG() throws {
+        var engine = GameEngine(seed: 1)
+        _ = engine.apply(.left)
         let data = try JSONEncoder().encode(engine)
-        let decoded = try JSONDecoder().decode(GameEngine.self, from: data)
-        #expect(decoded.tiles == engine.tiles)
-        #expect(decoded.score == engine.score)
-        #expect(decoded.won == engine.won)
-        #expect(decoded.over == engine.over)
+        var decoded = try JSONDecoder().decode(GameEngine.self, from: data)
+        #expect(decoded == engine)
+        // RNG 状态随档恢复：双方继续走同一步，形状与得分仍一致
+        var original = engine
+        let a = original.apply(.up)
+        let b = decoded.apply(.up)
+        #expect(shape(original.grid) == shape(decoded.grid))
+        #expect(a.scoreDelta == b.scoreDelta)
     }
 }

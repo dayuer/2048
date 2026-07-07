@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BoardView: View {
-    let tiles: [Tile]
+    let tiles: [DisplayTile]
 
     var body: some View {
         GeometryReader { geometry in
@@ -14,16 +14,16 @@ struct BoardView: View {
                     .fill(Theme.board)
 
                 ForEach(0..<GameEngine.size * GameEngine.size, id: \.self) { index in
-                    let position = Position(x: index % GameEngine.size, y: index / GameEngine.size)
+                    let coord = Coord(row: index / GameEngine.size, col: index % GameEngine.size)
                     RoundedRectangle(cornerRadius: cellSize * 0.06)
                         .fill(Theme.emptyCell)
                         .frame(width: cellSize, height: cellSize)
-                        .offset(offset(for: position, cellSize: cellSize, spacing: spacing))
+                        .offset(offset(for: coord, cellSize: cellSize, spacing: spacing))
                 }
 
                 ForEach(tiles) { tile in
-                    TileView(tile: tile, cellSize: cellSize)
-                        .offset(offset(for: tile.position, cellSize: cellSize, spacing: spacing))
+                    TileView(value: tile.value, cellSize: cellSize)
+                        .offset(offset(for: tile.coord, cellSize: cellSize, spacing: spacing))
                         // 出现只做纯淡入（无任何缩放/弹跳）；移除立即消失
                         .transition(.asymmetric(
                             insertion: .opacity,
@@ -35,10 +35,10 @@ struct BoardView: View {
         .aspectRatio(1, contentMode: .fit)
     }
 
-    private func offset(for position: Position, cellSize: CGFloat, spacing: CGFloat) -> CGSize {
+    private func offset(for coord: Coord, cellSize: CGFloat, spacing: CGFloat) -> CGSize {
         CGSize(
-            width: spacing + (cellSize + spacing) * CGFloat(position.x),
-            height: spacing + (cellSize + spacing) * CGFloat(position.y)
+            width: spacing + (cellSize + spacing) * CGFloat(coord.col),
+            height: spacing + (cellSize + spacing) * CGFloat(coord.row)
         )
     }
 }

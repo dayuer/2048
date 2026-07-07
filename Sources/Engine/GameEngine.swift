@@ -1,55 +1,58 @@
 import Foundation
 
-/// 一次滑动的结果，供 UI 做两阶段动画。
-struct MoveResult {
-    /// 滑动阶段：所有原方块滑动后的位置（合并双方都汇聚到目标格）。
-    let slidTiles: [Tile]
-    /// 本次滑动产生的合并结果方块（pop 动画用）。
-    let mergedTiles: [Tile]
-    /// 本次滑动后随机生成的新方块。
-    let spawnedTile: Tile?
-    /// 本次滑动的得分增量。
-    let scoreGained: Int
-}
-
-/// 2048 核心规则，忠实移植自 gabrielecirulli/2048 的 game_manager.js。
-/// 纯值类型、无 UI 依赖；随机数由外部注入以便测试。
-struct GameEngine: Codable {
+/// 2048 核心规则，忠实移植自 gabrielecirulli/2048 的 game_manager.js
+/// （遍历顺序、最远位置、单次合并约束）。遵循 GridGame 基本法：
+/// conform GridGameEngine，结果以 Resolution/Beat 时间线表达，
+/// RNG 状态并入 Codable 状态——存档恢复后续序列可复现。
+struct GameEngine: GridGameEngine, Codable, Equatable {
     static let size = 4
+    static let kind = ActivityKind.grid2048
 
-    private(set) var tiles: [Tile]
+    private(set) var grid: Grid<Int>
     private(set) var score: Int
     private(set) var won: Bool
-    private(set) var over: Bool
     private(set) var keepPlaying: Bool
+    private var rng: SeededGenerator
 
-    init(tiles: [Tile], score: Int = 0, won: Bool = false, over: Bool = false, keepPlaying: Bool = false) {
-        self.tiles = tiles
+    /// 确定性开局：同种子 = 同开局与同后续生成序列。
+    init(seed: UInt64) {
+        self.init(grid: Grid(rows: Self.size, cols: Self.size), rng: SeededGenerator(seed: seed))
+        spawnRandomTile()
+        spawnRandomTile()
+    }
+
+    /// 指定局面构造（测试用）。
+    init(
+        grid: Grid<Int>,
+        score: Int = 0,
+        won: Bool = false,
+        keepPlaying: Bool = false,
+        rng: SeededGenerator = SeededGenerator(seed: 0)
+    ) {
+        self.grid = grid
         self.score = score
         self.won = won
-        self.over = over
         self.keepPlaying = keepPlaying
+        self.rng = rng
     }
 
-    static func newGame<R: RandomNumberGenerator>(using rng: inout R) -> GameEngine {
-        var engine = GameEngine(tiles: [])
-        engine.spawnRandomTile(using: &rng)
-        engine.spawnRandomTile(using: &rng)
-        return engine
-    }
+    var summary: ActivitySummary { ActivitySummary(headline: "2048", score: score) }
 
-    var isTerminated: Bool { over || (won && !keepPlaying) }
+    /// 引擎自身无路可走（无空格且四向无同值）。胜利目标是外层规则，不在此判定。
+    var isTerminal: Bool { !movesAvailable }
 
-    var biggestTile: Int { tiles.map(\.value).max() ?? 0 }
+    /// 对局终止：死局，或已胜且未选择继续。
+    var isTerminated: Bool { isTerminal || (won && !keepPlaying) }
+
+    var biggestTile: Int { grid.occupied.map(\.tile.payload).max() ?? 0 }
 
     var movesAvailable: Bool {
-        if tiles.count < Self.size * Self.size { return true }
-        var values = [[Int]](repeating: [Int](repeating: 0, count: Self.size), count: Self.size)
-        for tile in tiles { values[tile.position.x][tile.position.y] = tile.value }
-        for x in 0..<Self.size {
-            for y in 0..<Self.size {
-                if x + 1 < Self.size, values[x][y] == values[x + 1][y] { return true }
-                if y + 1 < Self.size, values[x][y] == values[x][y + 1] { return true }
+        if !grid.emptyCoords.isEmpty { return true }
+        for row in 0..<Self.size {
+            for col in 0..<Self.size {
+                guard let value = grid[Coord(row: row, col: col)]?.payload else { continue }
+                if row + 1 < Self.size, grid[Coord(row: row + 1, col: col)]?.payload == value { return true }
+                if col + 1 < Self.size, grid[Coord(row: row, col: col + 1)]?.payload == value { return true }
             }
         }
         return false
@@ -57,97 +60,82 @@ struct GameEngine: Codable {
 
     mutating func continueAfterWin() { keepPlaying = true }
 
-    /// 朝 `direction` 滑动。没有方块移动（或对局已结束）时返回 nil 且不改变状态。
+    /// 朝 action 方向滑动。时间线：第 1 拍 moves + transforms（滑动与合并），
+    /// 第 2 拍 spawns（那一个随机新块）。无变化/已终止时 beats 为空且状态不变。
     @discardableResult
-    mutating func move<R: RandomNumberGenerator>(_ direction: Direction, using rng: inout R) -> MoveResult? {
-        guard !isTerminated else { return nil }
+    mutating func apply(_ action: Direction) -> Resolution<Int> {
+        guard !isTerminated else { return Resolution() }
 
-        var grid = [[Tile?]](repeating: [Tile?](repeating: nil, count: Self.size), count: Self.size)
-        for tile in tiles { grid[tile.position.x][tile.position.y] = tile }
-
-        let (dx, dy) = direction.vector
+        let (dRow, dCol) = action.vector
         // 从滑动方向最远端开始遍历（与原版 buildTraversals 一致）
-        var xs = Array(0..<Self.size), ys = Array(0..<Self.size)
-        if dx == 1 { xs.reverse() }
-        if dy == 1 { ys.reverse() }
+        var rowOrder = Array(0..<Self.size)
+        var colOrder = Array(0..<Self.size)
+        if dRow == 1 { rowOrder.reverse() }
+        if dCol == 1 { colOrder.reverse() }
 
-        var slidPositions = Dictionary(uniqueKeysWithValues: tiles.map { ($0.id, $0.position) })
+        var work = grid
+        var beat = Beat<Int>()
         var mergedResultIDs: Set<UUID> = []
-        var mergedTiles: [Tile] = []
         var moved = false
         var gained = 0
 
-        for x in xs {
-            for y in ys {
-                guard let tile = grid[x][y] else { continue }
+        for row in rowOrder {
+            for col in colOrder {
+                let start = Coord(row: row, col: col)
+                guard let tile = work[start] else { continue }
 
                 // 找最远可达空位及其后第一个障碍
-                var farthest = Position(x: x, y: y)
-                var next = Position(x: x + dx, y: y + dy)
-                while Self.inBounds(next), grid[next.x][next.y] == nil {
+                var farthest = start
+                var next = Coord(row: row + dRow, col: col + dCol)
+                while work.contains(next), work[next] == nil {
                     farthest = next
-                    next = Position(x: next.x + dx, y: next.y + dy)
+                    next = Coord(row: next.row + dRow, col: next.col + dCol)
                 }
 
-                if Self.inBounds(next),
-                   let other = grid[next.x][next.y],
-                   other.value == tile.value,
+                if work.contains(next),
+                   let other = work[next],
+                   other.payload == tile.payload,
                    !mergedResultIDs.contains(other.id) {
                     // 合并：每个方块每次滑动最多参与一次（原版 mergedFrom 语义）
-                    let merged = Tile(value: tile.value * 2, position: next)
-                    grid[x][y] = nil
-                    grid[next.x][next.y] = merged
+                    let merged = Tile(payload: tile.payload * 2)
+                    work[start] = nil
+                    work[next] = merged
                     mergedResultIDs.insert(merged.id)
-                    mergedTiles.append(merged)
-                    slidPositions[tile.id] = next
-                    gained += merged.value
-                    if merged.value == 2048 { won = true }
+                    beat.moves.append(Move(id: tile.id, from: start, to: next))
+                    beat.transforms.append(Transform(
+                        consumed: [tile.id, other.id], produced: merged.id, at: next, payload: merged.payload
+                    ))
+                    gained += merged.payload
+                    if merged.payload == 2048 { won = true }
                     moved = true
-                } else {
-                    grid[x][y] = nil
-                    var movedTile = tile
-                    movedTile.position = farthest
-                    grid[farthest.x][farthest.y] = movedTile
-                    slidPositions[tile.id] = farthest
-                    if farthest != Position(x: x, y: y) { moved = true }
+                } else if farthest != start {
+                    work[start] = nil
+                    work[farthest] = tile
+                    beat.moves.append(Move(id: tile.id, from: start, to: farthest))
+                    moved = true
                 }
             }
         }
 
-        guard moved else { return nil }
+        guard moved else { return Resolution() }
 
-        let slidTiles = tiles.map { tile in
-            var copy = tile
-            copy.position = slidPositions[tile.id] ?? tile.position
-            return copy
-        }
+        grid = work
         score += gained
-        tiles = grid.flatMap { $0 }.compactMap { $0 }
-        let spawned = spawnRandomTile(using: &rng)
-        if !movesAvailable { over = true }
-
-        return MoveResult(slidTiles: slidTiles, mergedTiles: mergedTiles, spawnedTile: spawned, scoreGained: gained)
+        var beats = [beat]
+        if let spawn = spawnRandomTile() {
+            beats.append(Beat(spawns: [spawn]))
+        }
+        return Resolution(beats: beats, scoreDelta: gained)
     }
 
     @discardableResult
-    private mutating func spawnRandomTile<R: RandomNumberGenerator>(using rng: inout R) -> Tile? {
-        let occupied = Set(tiles.map(\.position))
-        var empty: [Position] = []
-        for x in 0..<Self.size {
-            for y in 0..<Self.size {
-                let position = Position(x: x, y: y)
-                if !occupied.contains(position) { empty.append(position) }
-            }
-        }
+    private mutating func spawnRandomTile() -> Spawn<Int>? {
+        let empty = grid.emptyCoords
         guard !empty.isEmpty else { return nil }
-        let position = empty[Int.random(in: 0..<empty.count, using: &rng)]
+        let coord = empty[Int.random(in: 0..<empty.count, using: &rng)]
         let value = Double.random(in: 0..<1, using: &rng) < 0.9 ? 2 : 4
-        let tile = Tile(value: value, position: position)
-        tiles.append(tile)
-        return tile
-    }
-
-    private static func inBounds(_ p: Position) -> Bool {
-        p.x >= 0 && p.x < size && p.y >= 0 && p.y < size
+        let tile = Tile<Int>(payload: value)
+        grid[coord] = tile
+        return Spawn(id: tile.id, at: coord, payload: value)
     }
 }

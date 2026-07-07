@@ -53,7 +53,8 @@ xcodebuild test -project Game2048.xcodeproj -scheme Game2048 \
 ```
 Sources/
 ├── App/            # 入口、entitlements、图标
-├── Engine/         # 2048 核心规则（纯逻辑、Codable、RNG 注入）
+├── GridGame/       # 基本法底座：状态原语 + Beat 结算时间线 + SessionActivity/GridGameEngine 契约（零游戏规则）
+├── Engine/         # 2048 规则内核（GridGameEngine 特化；纯逻辑、Codable、RNG 状态随档）
 ├── Session/        # 断网时段状态机 + SessionController 编排 + 离线提示（纯逻辑，可单测）
 ├── Monetization/   # Journey Pass（StoreKit 2 非消耗型 IAP，权益本地持久化）
 ├── Persistence/    # UserDefaults 存档（局面 / Session / Pass 权益）

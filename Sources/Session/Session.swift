@@ -5,12 +5,10 @@ enum SessionState: String, Codable, Sendable {
     case setup, active, landed, closed
 }
 
-/// Session 内做过的一件事（V1 仅 2048，接口为未来程序化组件预留）。仅本地。
-struct SessionActivity: Codable, Equatable, Sendable {
-    enum Kind: String, Codable, Sendable {
-        case game2048
-    }
-    let kind: Kind
+/// Session 内做过的一件事的日志条目（V1 仅 2048）。仅本地。
+/// kind 用基本法 ActivityKind——Session 只依赖 SessionActivity 薄契约层。
+struct ActivityLogEntry: Codable, Equatable, Sendable {
+    let kind: ActivityKind
     let startedAt: Date
     var endedAt: Date?
 }
@@ -22,7 +20,7 @@ struct Session: Codable, Equatable, Sendable {
     /// 计划时长（秒）。可空——用户可以不设时长。
     var plannedDuration: TimeInterval?
     private(set) var state: SessionState
-    private(set) var activityLog: [SessionActivity]
+    private(set) var activityLog: [ActivityLogEntry]
     /// 非 nil 表示当前处于暂停中，值为暂停开始时刻。
     private(set) var pausedAt: Date?
     /// 已累计的暂停总时长（秒），用于从墙钟时间中扣除。
@@ -45,7 +43,7 @@ struct Session: Codable, Equatable, Sendable {
     mutating func begin(at now: Date) {
         guard state == .setup else { return }
         state = .active
-        activityLog.append(SessionActivity(kind: .game2048, startedAt: now, endedAt: nil))
+        activityLog.append(ActivityLogEntry(kind: .grid2048, startedAt: now, endedAt: nil))
     }
 
     /// 应对颠簸/供餐/广播打断。重复暂停为无操作（不叠加）。

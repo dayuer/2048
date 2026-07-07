@@ -26,10 +26,10 @@ import Testing
 
     @Test func gameStateRoundTripAndClear() {
         #expect(storage.gameState == nil)
-        var rng = SeededRNG(state: 3)
-        let engine = GameEngine.newGame(using: &rng)
+        var engine = GameEngine(seed: 3)
+        _ = engine.apply(.left)
         storage.gameState = engine
-        #expect(storage.gameState?.tiles == engine.tiles)
+        #expect(storage.gameState == engine)
         storage.gameState = nil
         #expect(storage.gameState == nil)
     }

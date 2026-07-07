@@ -18,7 +18,7 @@ import Testing
         session.begin(at: t0)
         #expect(session.state == .active)
         #expect(session.activityLog.count == 1)
-        #expect(session.activityLog[0].kind == .game2048)
+        #expect(session.activityLog[0].kind == .grid2048)
         #expect(session.activityLog[0].startedAt == t0)
         #expect(session.activityLog[0].endedAt == nil)
     }
