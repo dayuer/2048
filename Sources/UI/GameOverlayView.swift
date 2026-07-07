@@ -11,9 +11,12 @@ struct GameOverlayView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(state == .won ? Theme.winOverlay : Theme.loseOverlay)
                 VStack(spacing: 20) {
-                    Text(state == .won ? "You win!" : "Game over!")
+                    Text(state == .won ? LocalizedStringKey("You win!") : LocalizedStringKey("Game over!"))
                         .font(.system(size: 44, weight: .bold))
                         .foregroundStyle(state == .won ? Theme.lightText : Theme.text)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .padding(.horizontal, 12)
                     HStack(spacing: 12) {
                         if state == .won {
                             OverlayButton(title: "Keep going", action: onKeepGoing)
@@ -28,7 +31,7 @@ struct GameOverlayView: View {
 }
 
 private struct OverlayButton: View {
-    let title: String
+    let title: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -36,6 +39,7 @@ private struct OverlayButton: View {
             Text(title)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(Theme.lightText)
+                .lineLimit(1)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
                 .background(Theme.button, in: RoundedRectangle(cornerRadius: 6))

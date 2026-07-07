@@ -17,10 +17,12 @@ struct TileView: View {
         RoundedRectangle(cornerRadius: cellSize * 0.06)
             .fill(Theme.tileColor(tile.value))
             .overlay(
-                Text("\(tile.value)")
+                Text(verbatim: String(tile.value))
                     .font(.system(size: fontSize, weight: .bold))
                     .foregroundStyle(Theme.tileTextColor(tile.value))
-                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.4)
+                    .padding(cellSize * 0.05)
             )
             .frame(width: cellSize, height: cellSize)
     }

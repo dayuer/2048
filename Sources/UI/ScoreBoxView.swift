@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ScoreBoxView: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: Int
     var delta: Int = 0
     var deltaID: Int = 0
@@ -11,9 +11,14 @@ struct ScoreBoxView: View {
             Text(label)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Theme.scoreLabel)
-            Text("\(value)")
+                .lineLimit(1)
+            // verbatim：不走本地化/千分位格式，单行 + 缩字防溢出
+            Text(verbatim: String(value))
                 .font(.title3.weight(.bold))
+                .monospacedDigit()
                 .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .contentTransition(.numericText(value: Double(value)))
         }
         .frame(minWidth: 72)
@@ -35,9 +40,10 @@ private struct FloatingScoreView: View {
     @State private var animate = false
 
     var body: some View {
-        Text("+\(value)")
+        Text(verbatim: "+\(value)")
             .font(.headline.bold())
             .foregroundStyle(Theme.text.opacity(0.7))
+            .lineLimit(1)
             .offset(y: animate ? -26 : 0)
             .opacity(animate ? 0 : 1)
             .onAppear {

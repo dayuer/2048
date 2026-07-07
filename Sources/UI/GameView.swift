@@ -54,9 +54,12 @@ struct GameView: View {
 
     private var header: some View {
         HStack(alignment: .top) {
-            Text("2048")
+            Text(verbatim: "2048")
                 .font(.system(size: 52, weight: .heavy))
                 .foregroundStyle(Theme.text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .layoutPriority(-1)
             Spacer()
             HStack(spacing: 8) {
                 ScoreBoxView(
