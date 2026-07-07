@@ -24,6 +24,9 @@ struct TileView: View {
                     .minimumScaleFactor(0.4)
                     .padding(cellSize * 0.05)
             )
+            // 先把块+数字合成为单一图层再做透明度过渡，
+            // 避免淡入时数字（对比度低）比色块晚显现造成的视觉跳动
+            .compositingGroup()
             .frame(width: cellSize, height: cellSize)
     }
 }

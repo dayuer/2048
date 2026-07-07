@@ -1,59 +1,89 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "SCORE" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "得分" }
-        }
-      }
-    },
     "BEST" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "最高分" }
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高分"
+          }
         }
       }
     },
-    "New Game" : {
+    "Game over!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "新游戏" }
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "游戏结束"
+          }
         }
       }
     },
     "Join the numbers and get to the **2048** tile!" : {
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "合并相同数字，拼出 **2048**！" }
-        }
-      }
-    },
-    "You win!" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "你赢了！" }
-        }
-      }
-    },
-    "Game over!" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "游戏结束" }
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "合并相同数字，拼出 **2048**！"
+          }
         }
       }
     },
     "Keep going" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "继续挑战" }
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续挑战"
+          }
+        }
+      }
+    },
+    "New Game" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新游戏"
+          }
+        }
+      }
+    },
+    "SCORE" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "得分"
+          }
         }
       }
     },
     "Try again" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : { "state" : "translated", "value" : "再来一局" }
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再来一局"
+          }
+        }
+      }
+    },
+    "You win!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你赢了！"
+          }
         }
       }
     }
