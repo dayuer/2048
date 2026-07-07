@@ -4,7 +4,7 @@ import SwiftUI
 struct Game2048App: App {
     var body: some Scene {
         WindowGroup {
-            Text("2048")
+            GameView()
         }
     }
 }
