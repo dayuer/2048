@@ -20,10 +20,11 @@ struct SessionActiveView: View {
                     Text("落地")
                 }
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Theme.lightText)
-                .padding(.horizontal, 16)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18)
                 .padding(.vertical, 10)
-                .background(Theme.button.opacity(0.9), in: Capsule())
+                .background(Shell.accent, in: Capsule())
+                .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
             }
             .buttonStyle(.plain)
             .padding(.bottom, 18)

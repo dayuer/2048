@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// landed 态：克制的「你已落地」。回到深墨外壳，展示本次 Session 做了什么（本地），
+/// landed 态：克制的「你已落地」（微信风）。展示本次 Session 做了什么（本地），
 /// 并提供**自愿**同步 Game Center（永不强制、不弹窗骚扰）。
 struct SessionLandedView: View {
     let controller: SessionController
@@ -10,47 +10,41 @@ struct SessionLandedView: View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer(minLength: 0)
 
-            Text("SESSION · LANDED")
-                .shellMonoLabel()
-
             Text("你已落地")
-                .font(.shellDisplay(48))
-                .foregroundStyle(Shell.ink)
-                .padding(.top, 12)
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(Shell.textPrimary)
+            Text("这段断网时间，已经好好地过完了。")
+                .font(.system(size: 15))
+                .foregroundStyle(Shell.textSecondary)
+                .padding(.top, 10)
 
-            Rectangle()
-                .fill(Shell.accent)
-                .frame(width: 40, height: 2)
-                .padding(.top, 22)
-
-            // 本次时间统计——用签名的「大衬线数字 + 等宽微标签」呈现。
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
+            // 本次时间统计——白卡片。
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("\(minutes)")
-                    .font(.shellDisplay(64, weight: .medium))
-                    .foregroundStyle(Shell.ink)
+                    .font(.system(size: 44, weight: .semibold))
+                    .foregroundStyle(Shell.accent)
                 Text("分钟离线")
                     .font(.system(size: 16))
-                    .foregroundStyle(Shell.mutedInk)
+                    .foregroundStyle(Shell.textSecondary)
             }
-            .padding(.top, 36)
-
-            Text("MINUTES OFFLINE")
-                .shellMonoLabel()
-                .padding(.top, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(Shell.card, in: RoundedRectangle(cornerRadius: Shell.cardRadius))
+            .padding(.top, 28)
 
             Spacer(minLength: 40)
 
-            Button("同步这次成绩") { gameCenter.showLeaderboard() }
-                .buttonStyle(ShellGhostButtonStyle())
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 18)
+            Button("完成") { controller.close() }
+                .buttonStyle(WeChatPrimaryButtonStyle())
 
-            Button("结束") { controller.close() }
-                .buttonStyle(ShellPrimaryButtonStyle())
+            Button("同步这次成绩") { gameCenter.showLeaderboard() }
+                .buttonStyle(WeChatTextButtonStyle())
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16)
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 24)
         .frame(maxWidth: 480)
     }
 

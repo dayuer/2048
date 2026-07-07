@@ -23,7 +23,7 @@ struct SessionShellView: View {
 
     var body: some View {
         ZStack {
-            Shell.ground.ignoresSafeArea()
+            Shell.page.ignoresSafeArea()
 
             Group {
                 switch state {

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Journey Pass 购买页。诚实变现：一次性买断、无倒计时、无 dark pattern。
+/// Journey Pass 购买页（微信风）。诚实变现：一次性买断、无倒计时、无 dark pattern。
 /// 购买失败 / 未联网静默降级，绝不打断——2048 免费部分始终可玩。
 struct JourneyPassView: View {
     let passStore: JourneyPassStore
@@ -11,67 +11,65 @@ struct JourneyPassView: View {
 
     var body: some View {
         ZStack {
-            Shell.ground.ignoresSafeArea()
+            Shell.page.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Spacer()
+                    Button("以后再说") { dismiss() }
+                        .buttonStyle(WeChatTextButtonStyle(color: Shell.textSecondary))
+                }
+                .padding(.top, 4)
+
                 Spacer(minLength: 0)
 
-                Text("JOURNEY PASS")
-                    .shellMonoLabel()
+                Text("Journey Pass")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Shell.textPrimary)
+                Text("永久解锁 Session 模式")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Shell.textSecondary)
+                    .padding(.top, 8)
 
-                Text("解锁\nSession 模式")
-                    .font(.shellDisplay(40))
-                    .foregroundStyle(Shell.ink)
-                    .padding(.top, 12)
-
-                Rectangle()
-                    .fill(Shell.accent)
-                    .frame(width: 40, height: 2)
-                    .padding(.top, 22)
-
-                VStack(alignment: .leading, spacing: 14) {
-                    benefit("仪式容器：有始有终的断网时段")
-                    benefit("安静环境：无红点、无 badge、无诱导")
-                    benefit("落地收尾：本次时间的本地统计")
+                VStack(spacing: 0) {
+                    benefitRow("仪式容器", "有始有终的断网时段", first: true)
+                    benefitRow("安静环境", "无红点、无 badge、无诱导")
+                    benefitRow("落地收尾", "本次时间的本地统计")
                 }
+                .background(Shell.card, in: RoundedRectangle(cornerRadius: Shell.cardRadius))
                 .padding(.top, 28)
 
                 Text("一次买断，永久解锁。2048 本体始终免费。")
                     .font(.system(size: 13))
-                    .foregroundStyle(Shell.mutedInk)
-                    .padding(.top, 24)
+                    .foregroundStyle(Shell.textSecondary)
+                    .padding(.top, 16)
 
                 Spacer(minLength: 40)
 
                 Button { Task { await buy() } } label: {
                     Text(purchaseLabel)
                 }
-                .buttonStyle(ShellPrimaryButtonStyle())
+                .buttonStyle(WeChatPrimaryButtonStyle(enabled: !busy))
                 .disabled(busy)
-                .opacity(busy ? 0.6 : 1)
 
                 Button("恢复购买") { Task { await restore() } }
-                    .buttonStyle(ShellGhostButtonStyle())
+                    .buttonStyle(WeChatTextButtonStyle())
                     .frame(maxWidth: .infinity)
                     .padding(.top, 16)
 
                 if let message {
                     Text(message)
                         .font(.system(size: 13))
-                        .foregroundStyle(Shell.mutedInk)
+                        .foregroundStyle(Shell.textSecondary)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
                         .padding(.top, 12)
                 }
 
                 Spacer(minLength: 0)
-
-                Button("以后再说") { dismiss() }
-                    .buttonStyle(ShellGhostButtonStyle())
-                    .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 24)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
             .frame(maxWidth: 480)
         }
         .task { await load() }
@@ -80,13 +78,28 @@ struct JourneyPassView: View {
         }
     }
 
-    private func benefit(_ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Circle().fill(Shell.mutedInk).frame(width: 4, height: 4)
-                .offset(y: -3)
-            Text(text)
-                .font(.system(size: 15))
-                .foregroundStyle(Shell.ink)
+    private func benefitRow(_ title: String, _ subtitle: String, first: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            if !first {
+                Rectangle().fill(Shell.separator).frame(height: 0.5)
+                    .padding(.leading, 16)
+            }
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Shell.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 16))
+                        .foregroundStyle(Shell.textPrimary)
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Shell.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
         }
     }
 
