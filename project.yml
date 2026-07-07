@@ -41,6 +41,8 @@ targets:
         GENERATE_INFOPLIST_FILE: "YES"
     sources:
       - Tests
+      - path: Config/JourneyPass.storekit
+        buildPhase: resources
     dependencies:
       - target: Game2048
       - sdk: StoreKitTest.framework
