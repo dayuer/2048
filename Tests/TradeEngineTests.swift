@@ -117,6 +117,17 @@ final class TradeEngineTests: XCTestCase {
         XCTAssertEqual(TradeEngine.heal(state: &state), 0, "没钱治不了")
     }
 
+    func testHealIsAffordableWithStartingCash() {
+        // 单位修正后：开局现金就治得起（旧值 3500 万/点时永远治不起）
+        var state = newRun()
+        state.health = 90
+        let cost = TradeEngine.heal(state: &state)
+        XCTAssertGreaterThan(cost, 0, "开局现金应治得起健康")
+        XCTAssertEqual(state.currentHealth, RainmakerBalance.startHealth, "治得起就回满")
+        XCTAssertLessThanOrEqual(RainmakerBalance.healCostPerPoint, RainmakerBalance.startCash,
+                                 "单点回血价不得高于开局现金，否则永远治不起")
+    }
+
     func testUpgradeCapacity() {
         var state = newRun()
         state.cash = RainmakerBalance.capacityUpgradeCost

@@ -152,9 +152,10 @@ enum TradeEngine {
         if state.currentDebt > 0 {
             state.debt = Int((Double(state.currentDebt) * (1 + RainmakerBalance.debtDailyRate)).rounded(.up))
         }
-        // 存款生息（向下取整，银行不吃亏）
+        // 存款生息：有存款至少 +1 万，避免小额存款因 Int 截断永远零利息
         if state.currentBankDeposit > 0 {
-            state.bankDeposit = Int(Double(state.currentBankDeposit) * (1 + RainmakerBalance.bankDailyRate))
+            let next = Double(state.currentBankDeposit) * (1 + RainmakerBalance.bankDailyRate)
+            state.bankDeposit = max(state.currentBankDeposit + 1, Int(next.rounded()))
         }
         // 资方催收 / 逾期保全
         if state.currentDebt > 0 {

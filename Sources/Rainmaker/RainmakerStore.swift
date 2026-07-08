@@ -323,8 +323,12 @@ final class RainmakerStore {
     /// 失败/未接入则回退固定 900ms + 真相层台词池文本。
     private func deliver(npcID: String) async {
         defer {
-            deliveryTasks[npcID] = nil
-            typingNPCIDs.remove(npcID)
+            // 被取消（restart 已重置 deliveryTasks/typingNPCIDs）时不清理，
+            // 否则挂起点唤醒后的旧任务会抹掉新局面刚建的同名投递任务。
+            if !Task.isCancelled {
+                deliveryTasks[npcID] = nil
+                typingNPCIDs.remove(npcID)
+            }
         }
         while !Task.isCancelled,
               let events = state.threads.first(where: { $0.id == npcID })?.events,

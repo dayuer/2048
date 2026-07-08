@@ -47,11 +47,13 @@ enum RainmakerBalance {
     static let startHealth = 100
     /// 托管账户初始容量（手）。
     static let startCapacity = 100
-    /// 扩容一次的价格（万）与增量（手）——原版租房 20000 元 → +10。
-    static let capacityUpgradeCost = 20000
+    /// 扩容一次的价格（万）与增量（手）。原版 20000 元 1:1 搬来会变 2 亿（贫困陷阱），
+    /// 按本作「万元」经济与 burnRate 8/天 校准为 200 万——仍是笔正经投资，但可达。
+    static let capacityUpgradeCost = 200
     static let capacityUpgradeGain = 10
-    /// 私立医院回血价：每点健康（万）——原版 3500 元/点。
-    static let healCostPerPoint = 3500
+    /// 私立医院回血价：每点健康（万）。原版 3500 元 1:1 搬来会变 3500 万/点（治不起），
+    /// 校准为 2 万/点（回满 100 点 = 200 万），健康仍是有代价的生存资源。
+    static let healCostPerPoint = 2
     /// 卖出涉灰资产每笔扣的信誉。
     static let greySellRepPenalty = 1
     /// 债务逾期（后期未清）时资方保全+连番质询的健康伤害。

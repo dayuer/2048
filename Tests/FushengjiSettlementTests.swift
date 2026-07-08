@@ -33,6 +33,14 @@ final class FushengjiSettlementTests: XCTestCase {
         XCTAssertEqual(state.currentBankDeposit, 1010, "银行日息 1%（原版 MyBank * 0.01）")
     }
 
+    func testSmallBankDepositStillEarnsInterest() {
+        var state = newRun()
+        state.cash = 100_000
+        state.bankDeposit = 50           // 50万：1% < 1，旧实现会被 Int 截断为 0
+        endDay(&state)
+        XCTAssertGreaterThanOrEqual(state.currentBankDeposit, 51, "有存款每天至少 +1 万")
+    }
+
     func testCreditorSendsDailyThreatWhileInDebt() {
         var state = newRun()
         state.cash = 100_000

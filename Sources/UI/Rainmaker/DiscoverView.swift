@@ -113,6 +113,7 @@ private struct DeepWorkScreen: View {
         )
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .onDisappear { toastTask?.cancel() }
         .overlay(alignment: .top) {
             if let epiphany {
                 EpiphanyToast(reward: epiphany) {
