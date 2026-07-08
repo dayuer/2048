@@ -37,6 +37,22 @@ enum RainmakerEngine {
         return state
     }
 
+    // MARK: - 闲聊收发
+
+    /// 玩家发消息 → NPC 从台词池回一句。空白消息忽略。
+    /// 真相层同步落档；「正在输入…」的投递节奏在 Store 表现层。
+    static func sendMessage(
+        _ text: String, to npcID: String, state: inout RainmakerState,
+        using rng: inout some RandomNumberGenerator, now: Date
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let npc = NPCCatalog.profile(id: npcID) else { return }
+
+        append(.playerText(id: uuid(using: &rng), text: trimmed, at: now), to: npcID, in: &state)
+        let reply = npc.smallTalk.randomElement(using: &rng) ?? "回头细聊。"
+        append(.npcText(id: uuid(using: &rng), text: reply, at: now), to: npcID, in: &state)
+    }
+
     // MARK: - 每日结算
 
     /// 结束今日：进行中谈判强制流产 → 作废未接项目 → 扣固定开销 → 破产判定 → 开新的一天。

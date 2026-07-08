@@ -6,9 +6,11 @@ struct RainmakerThreadView: View {
     let npcID: String
 
     private var profile: NPCProfile? { NPCCatalog.profile(id: npcID) }
+    /// 只渲染已送达的事件（投递节奏在 Store）。
     private var events: [RainmakerEvent] {
-        store.state.threads.first { $0.id == npcID }?.events ?? []
+        store.visibleEvents(npcID: npcID)
     }
+    private var isTyping: Bool { store.typingNPCIDs.contains(npcID) }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -17,22 +19,37 @@ struct RainmakerThreadView: View {
                     ForEach(events) { event in
                         eventView(event)
                             .id(event.id)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    if isTyping {
+                        TypingBubble().id("typing")
                     }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
+                .animation(.easeOut(duration: 0.2), value: events.count)
             }
             .background(WADoodleWallpaper())
             .defaultScrollAnchor(.bottom)
             .onChange(of: events.count) {
+                store.markRead(npcID: npcID)
                 if let last = events.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
             }
+            .onChange(of: isTyping) {
+                if isTyping { withAnimation { proxy.scrollTo("typing", anchor: .bottom) } }
+            }
+            .onAppear { store.markRead(npcID: npcID) }
         }
         .safeAreaInset(edge: .bottom) {
-            if store.state.activeNegotiation?.npcID == npcID {
-                NegotiationPanel(store: store)
+            VStack(spacing: 0) {
+                if store.state.activeNegotiation?.npcID == npcID {
+                    NegotiationPanel(store: store)
+                }
+                ComposerBar { text in
+                    store.sendMessage(text, to: npcID)
+                }
             }
         }
         .navigationTitle(profile.map { "\($0.name) · \($0.role)" } ?? npcID)
@@ -71,11 +88,14 @@ struct RainmakerThreadView: View {
     }
 }
 
-/// WhatsApp 式文字气泡（带尾巴）。
+/// WhatsApp 式文字气泡（带尾巴）；我方消息带已读双勾。
 private struct TextBubble: View {
     let text: String
     let at: Date
     let mine: Bool
+
+    /// WhatsApp 已读蓝勾色。
+    private static let readTick = Color(red: 0.33, green: 0.74, blue: 0.92)
 
     var body: some View {
         HStack {
@@ -84,9 +104,15 @@ private struct TextBubble: View {
                 Text(text)
                     .font(.system(size: 16))
                     .foregroundStyle(WA.textPrimary)
-                Text(RainmakerUI.timeLabel(at))
-                    .font(.system(size: 11))
-                    .foregroundStyle(WA.textSecondary)
+                HStack(spacing: 3) {
+                    Text(RainmakerUI.timeLabel(at))
+                        .font(.system(size: 11))
+                        .foregroundStyle(WA.textSecondary)
+                    if mine {
+                        DoubleTick()
+                            .foregroundStyle(Self.readTick)
+                    }
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
@@ -94,6 +120,90 @@ private struct TextBubble: View {
             .clipShape(BubbleShape(mine: mine))
             if !mine { Spacer(minLength: 48) }
         }
+    }
+}
+
+/// 双勾 ✓✓（WhatsApp 已读形态）。
+private struct DoubleTick: View {
+    var body: some View {
+        HStack(spacing: -5) {
+            Image(systemName: "checkmark")
+            Image(systemName: "checkmark")
+        }
+        .font(.system(size: 9, weight: .bold))
+    }
+}
+
+/// 「正在输入…」气泡：三点相位闪烁。
+private struct TypingBubble: View {
+    @State private var phase = 0
+
+    var body: some View {
+        HStack {
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(WA.textSecondary)
+                        .frame(width: 6, height: 6)
+                        .opacity(phase == index ? 1 : 0.3)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(WA.bubbleIn)
+            .clipShape(BubbleShape(mine: false))
+            Spacer(minLength: 48)
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(300))
+                phase = (phase + 1) % 3
+            }
+        }
+    }
+}
+
+/// WhatsApp 式输入条：＋ / 圆角输入框 / 发送键。
+private struct ComposerBar: View {
+    let onSend: (String) -> Void
+    @State private var text = ""
+
+    private var canSend: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "plus")
+                .font(.system(size: 20))
+                .foregroundStyle(WA.textSecondary)
+                .frame(width: 32, height: 32)
+
+            TextField("消息", text: $text, axis: .vertical)
+                .font(.system(size: 16))
+                .lineLimit(1...4)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(WA.bubbleIn, in: RoundedRectangle(cornerRadius: 18))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(WA.separator, lineWidth: 0.5)
+                )
+
+            Button {
+                let message = text
+                text = ""
+                onSend(message)
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(canSend ? WA.accent : WA.textSecondary.opacity(0.5))
+            }
+            .disabled(!canSend)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.thinMaterial)
     }
 }
 

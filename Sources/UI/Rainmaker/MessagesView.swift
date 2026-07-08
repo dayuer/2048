@@ -17,7 +17,7 @@ struct MessagesView: View {
                     NavigationLink {
                         RainmakerThreadView(store: store, npcID: thread.id)
                     } label: {
-                        ThreadRow(thread: thread, state: store.state)
+                        ThreadRow(store: store, npcID: thread.id)
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowSeparatorTint(WA.separator)
@@ -60,36 +60,56 @@ struct MessagesView: View {
     }
 }
 
-/// 微信式线程行：头像 + 名字 + 最后一条预览 + 时间。
+/// WhatsApp 式线程行：头像 + 名字 + 最后一条预览 + 时间 + 未读角标。
+/// 预览/角标只看「已送达」的消息——投递中的不剧透。
 private struct ThreadRow: View {
-    let thread: NPCThread
-    let state: RainmakerState
+    @Bindable var store: RainmakerStore
+    let npcID: String
 
-    private var profile: NPCProfile? { NPCCatalog.profile(id: thread.id) }
+    private var profile: NPCProfile? { NPCCatalog.profile(id: npcID) }
+    private var lastVisible: RainmakerEvent? { store.visibleEvents(npcID: npcID).last }
+    private var unread: Int { store.unreadCount(npcID: npcID) }
+    private var isTyping: Bool { store.typingNPCIDs.contains(npcID) }
 
     var body: some View {
         HStack(spacing: 12) {
             WAAvatar(
                 systemImage: profile?.icon ?? "person.fill",
-                background: RainmakerUI.tint(for: thread.id)
+                background: RainmakerUI.tint(for: npcID)
             )
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(profile?.name ?? thread.id)
+                    Text(profile?.name ?? npcID)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(WA.textPrimary)
                     Spacer()
-                    if let last = thread.events.last {
+                    if let last = lastVisible {
                         Text(RainmakerUI.timeLabel(last.at))
                             .font(.system(size: 13))
-                            .foregroundStyle(WA.textSecondary)
+                            .foregroundStyle(unread > 0 ? WA.accent : WA.textSecondary)
                     }
                 }
-                if let last = thread.events.last {
-                    Text(RainmakerUI.preview(for: last, in: state))
-                        .font(.system(size: 15))
-                        .foregroundStyle(WA.textSecondary)
-                        .lineLimit(1)
+                HStack {
+                    if isTyping {
+                        Text("正在输入…")
+                            .font(.system(size: 15))
+                            .foregroundStyle(WA.accent)
+                            .lineLimit(1)
+                    } else if let last = lastVisible {
+                        Text(RainmakerUI.preview(for: last, in: store.state))
+                            .font(.system(size: 15))
+                            .foregroundStyle(WA.textSecondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    if unread > 0 {
+                        Text("\(unread)")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(WA.accent, in: Capsule())
+                    }
                 }
             }
         }

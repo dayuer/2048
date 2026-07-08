@@ -71,6 +71,12 @@ enum RainmakerEvent: Codable, Equatable, Identifiable, Sendable {
         case let .systemNotice(_, _, at): at
         }
     }
+
+    /// 我方发出的事件（不计未读、气泡靠右、投递不延迟）。
+    var isMine: Bool {
+        if case .playerText = self { return true }
+        return false
+    }
 }
 
 /// 一根 NPC 对话线程。id 即 NPCCatalog 里的 npcID。
@@ -92,6 +98,9 @@ struct RainmakerState: Codable, Equatable, Sendable {
     var threads: [NPCThread]
     /// 同一时间只允许一场谈判（PRD：深度沟通独占注意力）。
     var activeNegotiation: NegotiationSession?
+    /// 每根线程已读到的事件数（threadID → count）。
+    /// Optional 以兼容旧存档（decodeIfPresent），一律走 unreadCount/markRead 访问。
+    var readCounts: [String: Int]?
 
     init(
         day: Int, cash: Int, reputation: Int, ap: Int, isGameOver: Bool,
@@ -105,5 +114,22 @@ struct RainmakerState: Codable, Equatable, Sendable {
         self.deals = deals
         self.threads = threads
         self.activeNegotiation = activeNegotiation
+    }
+
+    // MARK: 未读
+
+    /// 未读 = 已读游标之后的非我方事件数。
+    func unreadCount(npcID: String) -> Int {
+        guard let events = threads.first(where: { $0.id == npcID })?.events else { return 0 }
+        let read = min(readCounts?[npcID] ?? 0, events.count)
+        return events[read...].filter { !$0.isMine }.count
+    }
+
+    /// 点开线程即已读到当前末尾。
+    mutating func markRead(npcID: String) {
+        guard let count = threads.first(where: { $0.id == npcID })?.events.count else { return }
+        var counts = readCounts ?? [:]
+        counts[npcID] = count
+        readCounts = counts
     }
 }
