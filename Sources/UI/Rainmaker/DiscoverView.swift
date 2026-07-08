@@ -8,9 +8,7 @@ struct DiscoverView: View {
             List {
                 Section {
                     NavigationLink {
-                        GameView()
-                            .navigationTitle("财务数据重组沙盘")
-                            .navigationBarTitleDisplayMode(.inline)
+                        DeepWorkScreen()
                     } label: {
                         row(
                             icon: "brain.head.profile",
@@ -21,6 +19,21 @@ struct DiscoverView: View {
                     }
                 } footer: {
                     Text("在数字重组中训练结构化思维。达成高阶重组解锁「商业绝密档案」与谈判策略——即将开放。")
+                }
+
+                Section {
+                    NavigationLink {
+                        GlossaryView()
+                    } label: {
+                        row(
+                            icon: "character.book.closed.fill",
+                            tint: Color(red: 0.29, green: 0.46, blue: 0.90),
+                            title: "创投百科词典",
+                            subtitle: "估值方法 · Term Sheet 条款 · 谈判战术"
+                        )
+                    }
+                } footer: {
+                    Text("谈判里用到的每个专业概念都能在这里查——策略包卡面的 ⓘ 直达对应词条。")
                 }
 
                 Section {
@@ -58,5 +71,16 @@ struct DiscoverView: View {
                     .foregroundStyle(WA.textSecondary)
             }
         }
+    }
+}
+
+/// 2048 沙盘的承载页：隐藏系统导航栏，退出只走 GameView 自绘的左上角返回按钮。
+private struct DeepWorkScreen: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        GameView(onExit: { dismiss() })
+            .navigationBarBackButtonHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
     }
 }
