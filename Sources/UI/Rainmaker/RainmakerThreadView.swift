@@ -96,11 +96,7 @@ struct RainmakerThreadView: View {
             // WhatsApp 导航头：头像 + 名字 + 在线状态副标题
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 10) {
-                    WAAvatar(
-                        systemImage: profile?.icon ?? "person.fill",
-                        background: RainmakerUI.tint(for: npcID),
-                        size: 36
-                    )
+                    NPCAvatar(npcID: npcID, size: 36)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(profile?.name ?? npcID)
                             .font(.body.weight(.semibold))
@@ -572,11 +568,7 @@ private struct NegotiationSheet: View {
 
     private var opponentCard: some View {
         HStack(alignment: .top, spacing: 12) {
-            WAAvatar(
-                systemImage: opponent?.icon ?? "person.fill",
-                background: RainmakerUI.tint(for: session?.npcID ?? ""),
-                size: 44
-            )
+            NPCAvatar(npcID: session?.npcID ?? "", size: 44)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(opponent?.name ?? "")

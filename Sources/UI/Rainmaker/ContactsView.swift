@@ -16,11 +16,7 @@ struct ContactsView: View {
                     RainmakerThreadView(store: store, npcID: profile.id)
                 } label: {
                     HStack(spacing: 12) {
-                        WAAvatar(
-                            systemImage: profile.icon,
-                            background: RainmakerUI.tint(for: profile.id),
-                            size: 44
-                        )
+                        NPCAvatar(npcID: profile.id, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(profile.name)
                                 .font(.body)

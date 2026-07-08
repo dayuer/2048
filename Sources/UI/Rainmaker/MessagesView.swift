@@ -141,10 +141,7 @@ private struct ThreadRow: View {
     var body: some View {
         // WhatsApp 对齐：头像垂直居中；名字与时间同基线；预览最多两行、时间与预览同级字号
         HStack(spacing: 12) {
-            WAAvatar(
-                systemImage: profile?.icon ?? "person.fill",
-                background: RainmakerUI.tint(for: npcID)
-            )
+            NPCAvatar(npcID: npcID)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(profile?.name ?? npcID)
@@ -233,11 +230,7 @@ private struct NewChatSheet: View {
                     onSelect(profile.id)
                 } label: {
                     HStack(spacing: 12) {
-                        WAAvatar(
-                            systemImage: profile.icon,
-                            background: RainmakerUI.tint(for: profile.id),
-                            size: 44
-                        )
+                        NPCAvatar(npcID: profile.id, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(profile.name)
                                 .font(.body)

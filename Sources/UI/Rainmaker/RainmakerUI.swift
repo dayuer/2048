@@ -2,17 +2,56 @@ import SwiftUI
 
 /// Rainmaker UI 共用小件：NPC 配色、资源条、事件预览文案。
 enum RainmakerUI {
-    /// NPC 头像底色（assistant 走 WA 绿；沈墨走金装律师的深西装蓝）。
+    /// NPC 头像底色：每人一个可辨识的专属色（像真实通讯录里各人的头像底）。
     static func tint(for npcID: String) -> Color {
         switch npcID {
-        case NPCCatalog.assistant.id: WA.accent
-        case NPCCatalog.creditor.id: Color(red: 0.16, green: 0.23, blue: 0.38)
-        case "chen": Color(red: 0.29, green: 0.46, blue: 0.90)
-        case "zhou": Color(red: 0.90, green: 0.49, blue: 0.20)
-        case "ma": Color(red: 0.56, green: 0.35, blue: 0.86)
-        case "liu": Color(red: 0.22, green: 0.60, blue: 0.60)
+        case NPCCatalog.assistant.id: WA.accent                       // 小何 · 绿
+        case NPCCatalog.creditor.id: rgb(0.16, 0.23, 0.38)            // 沈墨 · 深西装蓝
+        // 商界联系人
+        case "chen": rgb(0.29, 0.46, 0.90)                            // 陈总 · 蓝
+        case "zhou": rgb(0.90, 0.49, 0.20)                            // 周老板 · 橙
+        case "ma": rgb(0.56, 0.35, 0.86)                              // 马姐 · 紫
+        case "liu": rgb(0.22, 0.60, 0.60)                             // 大刘 · 青
+        // 十城驻场贩子
+        case "dealer-bj": rgb(0.82, 0.33, 0.33)                       // 老猫 · 京红
+        case "dealer-sh": rgb(0.85, 0.62, 0.14)                       // 金姐 · 沪金
+        case "dealer-sz": rgb(0.15, 0.60, 0.76)                       // 老K · 科技蓝
+        case "dealer-hk": rgb(0.86, 0.30, 0.55)                       // Tony 蔡 · 港粉
+        case "dealer-sg": rgb(0.16, 0.62, 0.45)                       // 谭叔 · 南洋绿
+        case "dealer-jp": rgb(0.42, 0.45, 0.72)                       // 佐藤桑 · 靛
+        case "dealer-du": rgb(0.80, 0.53, 0.24)                       // 哈桑 · 沙金
+        case "dealer-zh": rgb(0.38, 0.46, 0.56)                       // 穆勒 · 钢灰蓝
+        case "dealer-ld": rgb(0.55, 0.20, 0.30)                       // 查尔斯 · 酒红
+        case "dealer-us": rgb(0.20, 0.34, 0.52)                       // 朴哥 · 华尔街靛蓝
         default: WA.avatarBg
         }
+    }
+
+    /// NPC 头像字（姓氏 / 名号关键字）：像真实通讯录的首字母头像。
+    static func monogram(for npcID: String) -> String {
+        switch npcID {
+        case NPCCatalog.assistant.id: "何"
+        case NPCCatalog.creditor.id: "沈"
+        case "chen": "陈"
+        case "zhou": "周"
+        case "ma": "马"
+        case "liu": "刘"
+        case "dealer-bj": "猫"
+        case "dealer-sh": "金"
+        case "dealer-sz": "K"
+        case "dealer-hk": "蔡"
+        case "dealer-sg": "谭"
+        case "dealer-jp": "佐"
+        case "dealer-du": "哈"
+        case "dealer-zh": "穆"
+        case "dealer-ld": "查"
+        case "dealer-us": "朴"
+        default: String(NPCCatalog.profile(id: npcID)?.name.prefix(1) ?? "?")
+        }
+    }
+
+    private static func rgb(_ r: Double, _ g: Double, _ b: Double) -> Color {
+        Color(red: r, green: g, blue: b)
     }
 
     /// 线程列表里的最后一条预览（我方消息由行内 ✓✓ 标识，不加“我：”前缀）。
@@ -52,6 +91,35 @@ enum RainmakerUI {
             return "昨天"
         }
         return date.formatted(date: .numeric, time: .omitted)
+    }
+}
+
+/// NPC 头像：专属色渐变圆 + 姓氏字（像真实通讯录里设了头像的联系人）。
+/// 系统/城市等非人格 tile 仍用 WAAvatar 的 SF Symbol 形态。
+struct NPCAvatar: View {
+    let npcID: String
+    var size: CGFloat = 52
+
+    private var base: Color { RainmakerUI.tint(for: npcID) }
+
+    var body: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [base.opacity(0.82), base],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: size, height: size)
+            .overlay(
+                Text(RainmakerUI.monogram(for: npcID))
+                    .font(.system(size: size * 0.42, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+            )
+            .overlay(
+                Circle().stroke(.white.opacity(0.12), lineWidth: 0.5)
+            )
     }
 }
 
