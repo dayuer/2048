@@ -94,9 +94,6 @@ private struct TextBubble: View {
     let at: Date
     let mine: Bool
 
-    /// WhatsApp 已读蓝勾色。
-    private static let readTick = Color(red: 0.33, green: 0.74, blue: 0.92)
-
     var body: some View {
         HStack {
             if mine { Spacer(minLength: 48) }
@@ -109,8 +106,7 @@ private struct TextBubble: View {
                         .font(.system(size: 11))
                         .foregroundStyle(WA.textSecondary)
                     if mine {
-                        DoubleTick()
-                            .foregroundStyle(Self.readTick)
+                        WADoubleTick()
                     }
                 }
             }
@@ -120,17 +116,6 @@ private struct TextBubble: View {
             .clipShape(BubbleShape(mine: mine))
             if !mine { Spacer(minLength: 48) }
         }
-    }
-}
-
-/// 双勾 ✓✓（WhatsApp 已读形态）。
-private struct DoubleTick: View {
-    var body: some View {
-        HStack(spacing: -5) {
-            Image(systemName: "checkmark")
-            Image(systemName: "checkmark")
-        }
-        .font(.system(size: 9, weight: .bold))
     }
 }
 

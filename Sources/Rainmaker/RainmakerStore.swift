@@ -85,6 +85,49 @@ final class RainmakerStore {
         commit()
     }
 
+    // MARK: - 列表筛选与搜索（WhatsApp 式列表页）
+
+    enum ThreadFilter: String, CaseIterable {
+        case all = "全部"
+        case unread = "未读"
+        case deals = "项目"
+    }
+
+    /// 列表数据源：筛选 + 搜索 + 按最后送达消息时间降序。
+    /// 搜索命中 NPC 名字或任意已送达的文字消息；只看已送达（投递中不剧透）。
+    func filteredThreads(query: String, filter: ThreadFilter) -> [NPCThread] {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        return state.threads
+            .filter { thread in
+                switch filter {
+                case .all: true
+                case .unread: unreadCount(npcID: thread.id) > 0
+                case .deals: state.deals.contains {
+                    $0.npcID == thread.id && ($0.status == .offered || $0.status == .negotiating)
+                }
+                }
+            }
+            .filter { thread in
+                guard !trimmed.isEmpty else { return true }
+                if let name = NPCCatalog.profile(id: thread.id)?.name, name.localizedCaseInsensitiveContains(trimmed) {
+                    return true
+                }
+                return visibleEvents(npcID: thread.id).contains { event in
+                    switch event {
+                    case let .npcText(_, text, _), let .playerText(_, text, _), let .systemNotice(_, text, _):
+                        text.localizedCaseInsensitiveContains(trimmed)
+                    case .dealOffer:
+                        false
+                    }
+                }
+            }
+            .sorted { a, b in
+                let lastA = visibleEvents(npcID: a.id).last?.at ?? .distantPast
+                let lastB = visibleEvents(npcID: b.id).last?.at ?? .distantPast
+                return lastA > lastB
+            }
+    }
+
     // MARK: - 已读 / 可见
 
     /// 已送达的事件（UI 只渲染这些）。

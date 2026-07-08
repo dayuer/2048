@@ -14,19 +14,45 @@ enum RainmakerUI {
         }
     }
 
-    /// 线程列表里的最后一条预览。
+    /// 线程列表里的最后一条预览（我方消息由行内 ✓✓ 标识，不加“我：”前缀）。
     static func preview(for event: RainmakerEvent, in state: RainmakerState) -> String {
         switch event {
         case let .npcText(_, text, _): text
-        case let .playerText(_, text, _): "我：\(text)"
+        case let .playerText(_, text, _): text
         case let .dealOffer(_, dealID, _):
-            "[项目] \(state.deals.first { $0.id == dealID }?.title ?? "商业计划书")"
-        case let .systemNotice(_, text, _): "[通知] \(text)"
+            "📄 \(state.deals.first { $0.id == dealID }?.title ?? "商业计划书")"
+        case let .systemNotice(_, text, _): "🔔 \(text)"
         }
     }
 
     static func timeLabel(_ date: Date) -> String {
         date.formatted(date: .omitted, time: .shortened)
+    }
+
+    /// 列表时间：今天→时刻，昨天→「昨天」，更早→短日期（WhatsApp 形态）。
+    static func listTimeLabel(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        if calendar.isDateInYesterday(date) {
+            return "昨天"
+        }
+        return date.formatted(date: .numeric, time: .omitted)
+    }
+}
+
+/// WhatsApp 蓝色已读双勾 ✓✓（气泡与列表预览共用）。
+struct WADoubleTick: View {
+    static let readBlue = Color(red: 0.33, green: 0.74, blue: 0.92)
+
+    var body: some View {
+        HStack(spacing: -5) {
+            Image(systemName: "checkmark")
+            Image(systemName: "checkmark")
+        }
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(Self.readBlue)
     }
 }
 

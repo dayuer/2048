@@ -80,6 +80,53 @@ final class RainmakerStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.unreadCount(npcID: npcID), 0, "已读游标要持久化")
     }
 
+    // MARK: - 列表筛选与搜索（WhatsApp 式列表页）
+
+    func testFilterAllReturnsThreadsSortedByLastVisible() {
+        let store = RainmakerStore(fileURL: fileURL)
+        store.instantDelivery = true
+        let all = store.filteredThreads(query: "", filter: .all)
+        XCTAssertEqual(all.count, store.state.threads.count)
+        let times = all.map { store.visibleEvents(npcID: $0.id).last?.at ?? .distantPast }
+        XCTAssertEqual(times, times.sorted(by: >), "按最后送达消息时间降序")
+    }
+
+    func testQueryMatchesNameAndMessageText() {
+        let store = RainmakerStore(fileURL: fileURL)
+        store.instantDelivery = true
+        store.sendMessage("这单佣金必须到位", to: "chen")
+
+        let byName = store.filteredThreads(query: "陈", filter: .all)
+        XCTAssertEqual(byName.map(\.id), ["chen"], "按 NPC 名字搜")
+
+        let byText = store.filteredThreads(query: "佣金必须到位", filter: .all)
+        XCTAssertEqual(byText.map(\.id), ["chen"], "按消息内容搜")
+    }
+
+    func testUnreadFilterExcludesReadThreads() {
+        let store = RainmakerStore(fileURL: fileURL)
+        store.instantDelivery = true
+        let first = store.state.threads[0].id
+        store.markRead(npcID: first)
+
+        let unread = store.filteredThreads(query: "", filter: .unread)
+        XCTAssertFalse(unread.contains { $0.id == first })
+        XCTAssertFalse(unread.isEmpty, "其余线程仍未读")
+    }
+
+    func testDealsFilterKeepsOnlyThreadsWithLiveDeals() {
+        let store = RainmakerStore(fileURL: fileURL)
+        store.instantDelivery = true
+        let dealNPCs = Set(
+            store.state.deals
+                .filter { $0.status == .offered || $0.status == .negotiating }
+                .map(\.npcID)
+        )
+        let filtered = store.filteredThreads(query: "", filter: .deals)
+        XCTAssertEqual(Set(filtered.map(\.id)), dealNPCs)
+        XCTAssertFalse(filtered.isEmpty, "开局应有带项目的线程")
+    }
+
     func testRestartResetsRun() {
         let store = RainmakerStore(fileURL: fileURL)
         store.endDay()
