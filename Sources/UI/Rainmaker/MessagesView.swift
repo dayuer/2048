@@ -29,7 +29,8 @@ struct MessagesView: View {
                             NavigationLink(value: thread.id) { EmptyView() }.opacity(0)
                             ThreadRow(store: store, npcID: thread.id)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        // WhatsApp 行规格：头像 52 + 上下 12 ≈ 76pt 行高
+                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                         .listRowSeparatorTint(WA.separator)
                     }
                 }
@@ -140,24 +141,26 @@ private struct ThreadRow: View {
     private var isTyping: Bool { store.typingNPCIDs.contains(npcID) }
 
     var body: some View {
+        // WhatsApp 对齐：头像垂直居中；名字与时间同基线；预览最多两行、时间与预览同级字号
         HStack(spacing: 12) {
             WAAvatar(
                 systemImage: profile?.icon ?? "person.fill",
                 background: RainmakerUI.tint(for: npcID)
             )
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline) {
                     Text(profile?.name ?? npcID)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(WA.textPrimary)
-                    Spacer()
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
                     if let last = lastVisible {
                         Text(RainmakerUI.listTimeLabel(last.at))
-                            .font(.footnote)
+                            .font(.subheadline)
                             .foregroundStyle(unread > 0 ? WA.accent : WA.textSecondary)
                     }
                 }
-                HStack(spacing: 4) {
+                HStack(alignment: .top, spacing: 4) {
                     if isTyping {
                         Text("正在输入…")
                             .font(.subheadline)
@@ -166,13 +169,14 @@ private struct ThreadRow: View {
                     } else if let last = lastVisible {
                         if last.isMine {
                             WADoubleTick()
+                                .padding(.top, 3)
                         }
                         Text(RainmakerUI.preview(for: last, in: store.state))
                             .font(.subheadline)
                             .foregroundStyle(WA.textSecondary)
-                            .lineLimit(1)
+                            .lineLimit(2)
                     }
-                    Spacer()
+                    Spacer(minLength: 8)
                     if unread > 0 {
                         Text("\(unread)")
                             .font(.caption.weight(.semibold))
