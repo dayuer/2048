@@ -102,24 +102,39 @@ struct NPCAvatar: View {
 
     private var base: Color { RainmakerUI.tint(for: npcID) }
 
+    /// 头像图资产名：优先人设显式指定，否则按约定 avatar_<id>（连字符转下划线）。
+    /// 约定名让新头像「丢进资产目录即生效」，无需改代码。
+    private var assetName: String {
+        NPCCatalog.profile(id: npcID)?.avatarImage
+            ?? "avatar_" + npcID.replacingOccurrences(of: "-", with: "_")
+    }
+
     var body: some View {
-        Circle()
-            .fill(
-                LinearGradient(
-                    colors: [base.opacity(0.82), base],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+        // 资产存在就用真头像；缺失（含约定名未提供图）稳妥回退姓氏字，绝不空白。
+        if let ui = UIImage(named: assetName) {
+            Image(uiImage: ui)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(.white.opacity(0.12), lineWidth: 0.5))
+        } else {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [base.opacity(0.82), base],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-            )
-            .frame(width: size, height: size)
-            .overlay(
-                Text(RainmakerUI.monogram(for: npcID))
-                    .font(.system(size: size * 0.42, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-            )
-            .overlay(
-                Circle().stroke(.white.opacity(0.12), lineWidth: 0.5)
-            )
+                .frame(width: size, height: size)
+                .overlay(
+                    Text(RainmakerUI.monogram(for: npcID))
+                        .font(.system(size: size * 0.42, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                )
+                .overlay(Circle().stroke(.white.opacity(0.12), lineWidth: 0.5))
+        }
     }
 }
 
