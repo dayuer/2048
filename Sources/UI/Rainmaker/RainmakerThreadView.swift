@@ -212,13 +212,13 @@ private struct TextBubble: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(text)
                     .font(.callout)
-                    .foregroundStyle(WA.textPrimary)
+                    .foregroundStyle(mine ? Color.white : WA.textPrimary)
                 HStack(spacing: 3) {
                     Text(RainmakerUI.timeLabel(at))
                         .font(.caption2)
-                        .foregroundStyle(WA.textSecondary)
+                        .foregroundStyle(mine ? Color.white.opacity(0.75) : WA.textSecondary)
                     if mine {
-                        WADoubleTick()
+                        WADoubleTick(tint: .white.opacity(0.85))
                     }
                 }
             }

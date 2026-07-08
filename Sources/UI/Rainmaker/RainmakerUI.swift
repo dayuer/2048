@@ -140,7 +140,8 @@ struct NPCAvatar: View {
 
 /// WhatsApp 蓝色已读双勾 ✓✓（气泡与列表预览共用）。
 struct WADoubleTick: View {
-    static let readBlue = Color(red: 0.33, green: 0.74, blue: 0.92)
+    /// 默认走品牌色；置于发出气泡（靛紫底）上时传白色。
+    var tint: Color = WA.accent
 
     var body: some View {
         HStack(spacing: -5) {
@@ -148,7 +149,7 @@ struct WADoubleTick: View {
             Image(systemName: "checkmark")
         }
         .font(.caption2.weight(.bold))
-        .foregroundStyle(Self.readBlue)
+        .foregroundStyle(tint)
     }
 }
 
