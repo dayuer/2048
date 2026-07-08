@@ -38,6 +38,7 @@ struct GameView: View {
             .frame(maxWidth: 480)
         }
         .contentShape(Rectangle())
+        .background(DisablePopGesture())
         .gesture(swipeGesture)
         .focusable()
         .focusEffectDisabled()
