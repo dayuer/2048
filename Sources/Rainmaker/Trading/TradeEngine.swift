@@ -5,14 +5,23 @@ import Foundation
 enum TradeEngine {
     // MARK: - 行情
 
-    /// 为当前圈子滚今日行情：单价均匀落在区间内，随机缺货 3 种
+    /// 为当前城市滚今日行情：单价均匀落在区间内，随机缺货 3 种
     /// （原版 makeDrugPrices(leaveout=3) 语义）。新闻事件在此之后乘价。
+    /// 特产规则（全球倒卖环线）：本城特产永不缺货，且报产地价（八折、不破区间下沿）——
+    /// 在产地进货、飞去别处出手，就是金融大鳄的环线。
     static func rollPrices(state: inout RainmakerState, using rng: inout some RandomNumberGenerator) {
+        let specialties = Set(TradeCatalog.venue(id: state.currentVenueID)?.specialties ?? [])
         var prices: [String: Int] = [:]
         for asset in TradeCatalog.assets {
-            prices[asset.id] = Int.random(in: asset.priceRange, using: &rng)
+            var price = Int.random(in: asset.priceRange, using: &rng)
+            if specialties.contains(asset.id) {
+                price = max(asset.priceRange.lowerBound, Int(Double(price) * 0.8))
+            }
+            prices[asset.id] = price
         }
-        for asset in TradeCatalog.assets.shuffled(using: &rng).prefix(3) {
+        // 缺货只从非特产里抽（特产是本城招牌，永远有量）
+        let leaveoutPool = TradeCatalog.assets.filter { !specialties.contains($0.id) }
+        for asset in leaveoutPool.shuffled(using: &rng).prefix(3) {
             prices.removeValue(forKey: asset.id)  // 今日无货
         }
         state.assetPrices = prices

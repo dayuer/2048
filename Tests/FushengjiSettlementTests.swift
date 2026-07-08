@@ -51,9 +51,10 @@ final class FushengjiSettlementTests: XCTestCase {
         state.debt = RainmakerBalance.startDebt * 2
         let healthBefore = state.currentHealth
         endDay(&state)
-        XCTAssertEqual(
+        // 保全伤害必到账；当日可能另滚出街头事件（额外扣血），故用不等式
+        XCTAssertLessThanOrEqual(
             state.currentHealth, healthBefore - RainmakerBalance.overdueBeatingDamage,
-            "欠钱太多，村长叫老乡揍俺（原版语义）"
+            "债务逾期，资方保全+连番质询该扣血（原版被揍语义）"
         )
     }
 

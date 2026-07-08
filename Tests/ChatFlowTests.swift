@@ -39,7 +39,7 @@ final class ChatFlowTests: XCTestCase {
 
         RainmakerEngine.sendMessage("   ", to: "chen", state: &state, using: &rng, now: day0)
 
-        XCTAssertEqual(state.threads.first { $0.id == "chen" }?.events.count, before)
+        XCTAssertEqual(state.threads.first { $0.id == "chen" }?.events.count ?? 0, before)
     }
 
     func testEveryNPCHasSmallTalkPool() {

@@ -15,7 +15,7 @@ struct TradeAsset: Identifiable, Equatable, Sendable {
     var basePrice: Int { (priceRange.lowerBound + priceRange.upperBound) / 2 }
 }
 
-/// 交易城市（对标原版地铁口黑市，格局放大到全国与海外）。
+/// 交易城市（对标原版地铁口黑市，格局放大到全球金融环线）。
 /// 每座城市一位驻场贩子、一套当日行情；飞一座城市 = 一天。
 struct TradeVenue: Identifiable, Equatable, Sendable {
     let id: String
@@ -25,6 +25,8 @@ struct TradeVenue: Identifiable, Equatable, Sendable {
     let icon: String
     /// 城市定位一句话（跑市场选择器里展示，把视野讲出来）。
     let tagline: String
+    /// 特产资产：该城永不缺货且报产地价（偏区间下沿）——全球倒卖环线的骨架。
+    let specialties: [String]
 }
 
 /// 静态交易目录：资产 × 圈子。数值锚定浮生记原版（VCD 50 → 汽车 20000）。
@@ -51,25 +53,39 @@ enum TradeCatalog {
                    isGrey: false, glossaryID: "asset-unicorn-stake"),        // 进口汽车 15000+rand(15000)
     ]
 
-    // MARK: 城市（北上广深杭 + 成都 + 港美：国内跑项目，上市看港美）
+    // MARK: 城市（全球金融环线：国内跑项目 → 港美上市 → 新迪苏伦管钱）
 
     static let venues: [TradeVenue] = [
         TradeVenue(id: "bj", name: "北京", dealerID: "dealer-bj", icon: "building.columns",
-                   tagline: "政策与人脉的中心，一切故事的起点"),
+                   tagline: "政策与人脉的中心，一切故事的起点",
+                   specialties: ["angel-stock"]),
         TradeVenue(id: "sh", name: "上海", dealerID: "dealer-sh", icon: "chart.line.uptrend.xyaxis",
-                   tagline: "陆家嘴的钱，最讲规矩也最挑剔"),
-        TradeVenue(id: "gz", name: "广州", dealerID: "dealer-gz", icon: "shippingbox",
-                   tagline: "千年商都，产业和贸易的基本盘"),
+                   tagline: "陆家嘴与科创板，境内机构的钱最讲规矩",
+                   specialties: ["tail-round"]),
         TradeVenue(id: "sz", name: "深圳", dealerID: "dealer-sz", icon: "cpu",
-                   tagline: "硬科技前线，快鱼吃慢鱼"),
-        TradeVenue(id: "hz", name: "杭州", dealerID: "dealer-hz", icon: "cart",
-                   tagline: "电商直播之都，流量即杠杆"),
-        TradeVenue(id: "cd", name: "成都", dealerID: "dealer-cd", icon: "cup.and.saucer",
-                   tagline: "新一线纵深，茶馆里谈成的生意不少"),
+                   tagline: "硬科技供应链前线，快鱼吃慢鱼",
+                   specialties: ["compute-voucher", "traffic-pack"]),
         TradeVenue(id: "hk", name: "香港", dealerID: "dealer-hk", icon: "dollarsign.circle",
-                   tagline: "港股上市窗口，离国际资本最近的地方"),
-        TradeVenue(id: "us", name: "美国", dealerID: "dealer-us", icon: "globe.americas",
-                   tagline: "美股上市窗口，把视野放长远"),
+                   tagline: "港股上市窗口，亚洲资本的门户",
+                   specialties: ["pre-ipo"]),
+        TradeVenue(id: "sg", name: "新加坡", dealerID: "dealer-sg", icon: "leaf",
+                   tagline: "家族办公室之都，老钱在这里安家",
+                   specialties: ["usd-fund"]),
+        TradeVenue(id: "jp", name: "东京", dealerID: "dealer-jp", icon: "yensign.circle",
+                   tagline: "低息日元与商社资本，套利者的天堂",
+                   specialties: ["compute-voucher"]),
+        TradeVenue(id: "du", name: "迪拜", dealerID: "dealer-du", icon: "sun.max",
+                   tagline: "石油美元与主权基金，钱不问来路",
+                   specialties: ["shell-license"]),
+        TradeVenue(id: "zh", name: "苏黎世", dealerID: "dealer-zh", icon: "lock.shield",
+                   tagline: "私人银行的保密传统，避险资金的终点",
+                   specialties: ["usd-fund"]),
+        TradeVenue(id: "ld", name: "伦敦", dealerID: "dealer-ld", icon: "building.2.crop.circle",
+                   tagline: "金融城老钱与家族信托，一切大宗的定价地",
+                   specialties: ["unicorn-stake"]),
+        TradeVenue(id: "us", name: "纽约", dealerID: "dealer-us", icon: "globe.americas",
+                   tagline: "华尔街终局：美股 IPO、对冲基金、block trade",
+                   specialties: ["unicorn-stake", "pre-ipo"]),
     ]
 
     /// 开局所在城市。

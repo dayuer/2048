@@ -15,6 +15,20 @@ struct NPCPersona: Codable, Sendable {
     let negotiationStance: String
 }
 
+/// 谈判桌台词脚本：全部可缺省——缺省时 NegotiationEngine 回退共享默认池。
+struct NegotiationScript: Sendable {
+    /// 开局应战（玩家发起尽调时的第一句）。
+    var open: String?
+    /// 被有效命中时的受痛台词池（空 = 共享池）。
+    var hurt: [String] = []
+    /// 底线被击破，全盘认输。
+    var fullBreak: String?
+    /// 见好就收签约。
+    var sign: String?
+    /// 手牌打空/拖过今晚，交易流产翻脸。
+    var bust: String?
+}
+
 /// 一位可谈生意的 NPC。icon 为 SF Symbol，UI 层配色。
 struct NPCProfile: Identifiable, Sendable {
     let id: String
@@ -29,13 +43,16 @@ struct NPCProfile: Identifiable, Sendable {
     let greetings: [String]
     /// 闲聊回复池（玩家主动发消息时抽一句）。
     let smallTalk: [String]
+    /// 谈判桌台词脚本（开局/受痛/认输/签约/翻脸）。
+    let negotiationScript: NegotiationScript
     /// 项目单模板池。
     let dealTemplates: [DealTemplate]
 
     init(
         id: String, name: String, role: String, icon: String,
         traits: [NPCTrait] = [], persona: NPCPersona, greetings: [String],
-        smallTalk: [String], dealTemplates: [DealTemplate]
+        smallTalk: [String], negotiationScript: NegotiationScript = NegotiationScript(),
+        dealTemplates: [DealTemplate]
     ) {
         self.id = id
         self.name = name
@@ -45,6 +62,7 @@ struct NPCProfile: Identifiable, Sendable {
         self.persona = persona
         self.greetings = greetings
         self.smallTalk = smallTalk
+        self.negotiationScript = negotiationScript
         self.dealTemplates = dealTemplates
     }
 }
@@ -218,8 +236,8 @@ enum NPCCatalog {
         dealTemplates: []
     )
 
-    /// 八城驻场贩子：每天甩当地行情，倒卖全靠他们。
-    /// 版图 = 北上广深杭 + 成都 + 港美——国内跑项目，上市看港美，视野放长远。
+    /// 十城驻场贩子：每天甩当地行情，倒卖全靠他们。
+    /// 全球金融环线 = 北上深（跑项目）+ 港纽（上市窗口）+ 新东迪苏伦（管钱的地方）。
     static let dealers: [NPCProfile] = [
         NPCProfile(
             id: "dealer-bj", name: "老猫", role: "北京 · 原始股贩子", icon: "building.columns",
@@ -248,19 +266,6 @@ enum NPCCatalog {
             dealTemplates: []
         ),
         NPCProfile(
-            id: "dealer-gz", name: "厂长", role: "广州 · 产业倒爷", icon: "shippingbox",
-            persona: NPCPersona(
-                background: "珠三角老厂长，专倒壳公司牌照和产业额度，跟开发区管委会熟得很，千年商都的门路一条不落。",
-                voice: "官腔混着厂味儿，慢条斯理，「按规矩来」挂嘴边。",
-                values: "讲关系讲程序，快钱不赚，稳钱不放。",
-                quirks: "谈价先递烟（你不抽他自己点上），说「牌照这东西，懂的都懂」。",
-                negotiationStance: "壳货水深，他知道每口井的深浅。"
-            ),
-            greetings: [],
-            smallTalk: ["牌照这东西，懂的都懂。", "珠三角风声紧的时候，货就值钱了。", "按规矩来，谁都别想快。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
             id: "dealer-sz", name: "老K", role: "深圳 · 码农贩子", icon: "cpu",
             persona: NPCPersona(
                 background: "南山科技园十年老码农，副业倒算力租赁券和刷量数据包，大厂内网消息灵通，信「快鱼吃慢鱼」。",
@@ -271,32 +276,6 @@ enum NPCCatalog {
             ),
             greetings: [],
             smallTalk: ["按我脚本回测，今天算力券性价比高。", "科技园都在传大模型扩容，你懂的。", "数据包这东西，用得好是增长，用不好是证据。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
-            id: "dealer-hz", name: "学生仔", role: "杭州 · 电商黄牛", icon: "cart",
-            persona: NPCPersona(
-                background: "名校辍学生，扎在直播电商基地倒天使轮原始股和算力券，客户全是主播和运营。",
-                voice: "年轻气盛，网络热梗多，动不动「家人们」。",
-                values: "信奉一夜暴富叙事，胆子比本钱大。",
-                quirks: "推销必带一句「这是下一个字节」。",
-                negotiationStance: "价格乱但偶有捡漏，风险自担。"
-            ),
-            greetings: [],
-            smallTalk: ["家人们，今天这货是下一个字节！", "杭州的消息，直播间比路演厅灵。", "早买早享受，晚买哭着求。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
-            id: "dealer-cd", name: "夜场李", role: "成都 · 消息贩子", icon: "cup.and.saucer",
-            persona: NPCPersona(
-                background: "成都酒馆茶馆两栖老板，麻将桌上什么额度都能撮合，突击入股的单子多从他这儿出。",
-                voice: "油滑热络，川味椒盐普通话，「贵人」「面子」不离口。",
-                values: "人脉即货源，酒品即人品。",
-                quirks: "谈事必约茶或酒，说「这单看在你面子上」。",
-                negotiationStance: "高危高利，出了事他永远「不知情」。"
-            ),
-            greetings: [],
-            smallTalk: ["贵人，今晚玉林路有个局，来不来？", "突击入股的额度，过了窗口神仙也拿不到。", "这单看在你面子上，别外传。"],
             dealTemplates: []
         ),
         NPCProfile(
@@ -313,7 +292,72 @@ enum NPCCatalog {
             dealTemplates: []
         ),
         NPCProfile(
-            id: "dealer-us", name: "朴哥", role: "美国 · 跨境倒爷", icon: "globe.americas",
+            id: "dealer-sg", name: "谭叔", role: "新加坡 · 家办管家", icon: "leaf",
+            persona: NPCPersona(
+                background: "南洋老华侨家族办公室的大管家，三代人的钱都从他手上过，美元基金份额的地下枢纽。",
+                voice: "温和的南洋腔国语，慢声细语，「稳当」二字不离口。",
+                values: "本金安全高于一切收益，只跟讲信用的人做第二单。",
+                quirks: "谈大钱前必请你喝肉骨茶，说「钱要过三代，才算钱」。",
+                negotiationStance: "费率咬得死，但交割滴水不漏，老钱的规矩。"
+            ),
+            greetings: [],
+            smallTalk: ["稳当最要紧，收益是其次的。", "家办的钱不追风口，风口会过去，家业不能倒。", "美元份额今天有一批，来路干净的。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-jp", name: "佐藤桑", role: "东京 · 商社中间人", icon: "yensign.circle",
+            persona: NPCPersona(
+                background: "综合商社出身的中间人，专做低息日元套利盘和二手算力设备，鞠躬的弧度和佣金成正比。",
+                voice: "礼数极重的敬语腔，句尾总带「请多关照」，报价却一丝不苟。",
+                values: "重承诺守交期，最看不起临时变卦的人。",
+                quirks: "递名片用双手，谈崩了也鞠躬，说「缘分未到」。",
+                negotiationStance: "价格几乎不让，但答应的事天塌下来也办到。"
+            ),
+            greetings: [],
+            smallTalk: ["日元还在低位，套利盘的窗口还开着，请多关照。", "商社的二手算力设备，成色请放心。", "东京的规矩：慢，但不会错。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-du", name: "哈桑", role: "迪拜 · 主权基金掮客", icon: "sun.max",
+            persona: NPCPersona(
+                background: "主权基金外围的掮客，石油美元的中转站，壳牌照和额度在他手上像倒卖椰枣一样自然。",
+                voice: "热情浮夸的商人腔，「我的朋友」开头，报价从来先报三倍。",
+                values: "钱不问来路，单不问去向；今天的朋友就是今天的朋友。",
+                quirks: "谈成必击掌，说「在迪拜，一切皆有可能」。",
+                negotiationStance: "开价狠、砍价快，成交全看你敢不敢还价。"
+            ),
+            greetings: [],
+            smallTalk: ["我的朋友！自由区的壳牌照，今天有好货。", "主权基金的钱在找出口，你有入口吗？", "在迪拜，一切皆有可能。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-zh", name: "穆勒先生", role: "苏黎世 · 私人银行家", icon: "lock.shield",
+            persona: NPCPersona(
+                background: "第四代私人银行家，班霍夫大街的地下金库钥匙比名片还多，避险资金和美元份额的最后归宿。",
+                voice: "克制精确的银行家腔，从不寒暄，第一句就是数字。",
+                values: "保密高于利润，纪律高于聪明。",
+                quirks: "看表的频率极高，说「时间和复利一样，不该被浪费」。",
+                negotiationStance: "条件写下来才算数，写下来就绝不改。"
+            ),
+            greetings: [],
+            smallTalk: ["数字我看过了，可以谈。", "保密是这条街三百年的招牌。", "避险的钱到了苏黎世，就不再问收益。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-ld", name: "查尔斯", role: "伦敦 · 老钱经纪", icon: "building.2.crop.circle",
+            persona: NPCPersona(
+                background: "金融城三代经纪世家，家族信托和独角兽老股的撮合人，俱乐部里半杯威士忌能定一单大宗。",
+                voice: "英式含蓄的绅士腔，损人不带脏字，夸人也留三分。",
+                values: "关系网就是资产负债表，声誉是唯一不可再生资源。",
+                quirks: "谈正事前必聊天气，说「伦敦的雾里藏着所有价格」。",
+                negotiationStance: "绅士的价，锱铢必较；成交后请你进俱乐部。"
+            ),
+            greetings: [],
+            smallTalk: ["今天天气不错——适合谈一单大的。", "老钱不追新故事，只买打折的好资产。", "金融城的规矩：先喝茶，后签字。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-us", name: "朴哥", role: "纽约 · 华尔街掮客", icon: "globe.americas",
             persona: NPCPersona(
                 background: "做中美跨境生意起家，常驻纽约倒美元基金份额和海外算力，谁要赴美上市他比投行还先知道。",
                 voice: "豪爽带口音，三句话不离「兄弟」和汇率。",

@@ -125,6 +125,32 @@ final class TradeEngineTests: XCTestCase {
         XCTAssertFalse(TradeEngine.upgradeCapacity(state: &state), "钱不够不能扩")
     }
 
+    // MARK: - 特产（全球倒卖环线）
+
+    func testSpecialtiesAlwaysStockedAtLocalCity() {
+        // 扫种子：本城特产永不缺货且价格不破区间（产地价 clamp 语义）
+        for seed in UInt64(0)..<30 {
+            let state = newRun(seed: seed)
+            let venue = TradeCatalog.venue(id: state.currentVenueID)!
+            for assetID in venue.specialties {
+                guard let price = state.assetPrices?[assetID] else {
+                    return XCTFail("seed \(seed) 特产 \(assetID) 在 \(venue.name) 缺货")
+                }
+                let range = TradeCatalog.asset(id: assetID)!.priceRange
+                XCTAssertTrue(range.contains(price), "特产价 \(price) 破区间 \(range)")
+            }
+        }
+    }
+
+    func testEveryVenueHasDealerAndSpecialtyAssetsExist() {
+        for venue in TradeCatalog.venues {
+            XCTAssertNotNil(NPCCatalog.profile(id: venue.dealerID), "\(venue.name) 缺驻场贩子")
+            for assetID in venue.specialties {
+                XCTAssertNotNil(TradeCatalog.asset(id: assetID), "\(venue.name) 特产 \(assetID) 不存在")
+            }
+        }
+    }
+
     // MARK: - 跑市场
 
     func testTravelAdvancesDayAndRerollsPrices() {
