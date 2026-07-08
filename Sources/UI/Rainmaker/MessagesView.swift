@@ -59,8 +59,9 @@ struct MessagesView: View {
                 NoticeCenterView(store: store)
             }
             .toolbar {
-                // 跑市场：飞一座城市 = 一天（顶栏右上，游戏化航班图标）
-                ToolbarItem(placement: .topBarTrailing) {
+                // 右上两枚按钮：跑市场（航班）+ 新对话（加号）。
+                // 同一 Group 内各自独立 hit 区，避免相邻 toolbar 按钮点按互相触发。
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
                         showTravel = true
                     } label: {
@@ -69,9 +70,10 @@ struct MessagesView: View {
                             .foregroundStyle(WA.textPrimary)
                             .frame(width: 34, height: 34)
                             .background(WA.separator.opacity(0.6), in: Circle())
+                            .contentShape(Circle())
                     }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
+                    .buttonStyle(.plain)
+
                     Button {
                         showNewChat = true
                     } label: {
@@ -80,7 +82,9 @@ struct MessagesView: View {
                             .foregroundStyle(.white)
                             .frame(width: 34, height: 34)
                             .background(WA.accent, in: Circle())
+                            .contentShape(Circle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .sheet(isPresented: $showNewChat) {
