@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 游戏 tab：插件库。每项进入「单人 / vs AI / vs 附近的人」；vs 人在 C 前置灰。
+/// 游戏 tab：插件库，行样式对齐 WhatsApp 列表（圆角方图标 + 名称 + chevron）。
 struct GameLibraryView: View {
     @State private var soloPlugin: GamePlugin?
 
@@ -13,22 +13,32 @@ struct GameLibraryView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: plugin.icon)
+                                .font(.system(size: 22))
                                 .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(Shell.accent, in: RoundedRectangle(cornerRadius: Shell.cardRadius))
-                            Text(plugin.name)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(Shell.textPrimary)
+                                .frame(width: 48, height: 48)
+                                .background(WA.accent, in: RoundedRectangle(cornerRadius: 12))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(plugin.name)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(WA.textPrimary)
+                                Text(plugin.supportsVersus ? "单人 · 对战" : "单人")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(WA.textSecondary)
+                            }
                             Spacer()
-                            Image(systemName: "chevron.right").foregroundStyle(Shell.textSecondary)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(WA.textSecondary)
                         }
                         .padding(.vertical, 4)
                     }
-                    .listRowBackground(Shell.card)
+                    .listRowBackground(WA.listBg)
+                    .listRowSeparatorTint(WA.separator)
                 }
             }
             .listStyle(.plain)
-            .background(Shell.page)
+            .background(WA.listBg)
+            .scrollContentBackground(.hidden)
             .navigationTitle("游戏")
             .fullScreenCover(item: $soloPlugin) { plugin in
                 plugin.makeSoloView()

@@ -21,7 +21,7 @@ struct TabShellView: View {
             MeView(identity: identity, chat: chat)
                 .tabItem { Label("我", systemImage: "person.crop.circle") }
         }
-        .tint(Shell.accent)
+        .tint(WA.accent)
         .task { gameCenter.authenticate() }
     }
 }

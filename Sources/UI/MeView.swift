@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 我 tab：ephemeral 昵称（可重掷）+ 隐私自述 + 设置（清空线程）。
+/// 我 tab：WhatsApp Settings 复刻。系统 insetGrouped + 个人行 + 彩色圆角方图标行。
 struct MeView: View {
     let identity: EphemeralIdentity
     let chat: ChatStore
@@ -9,37 +9,45 @@ struct MeView: View {
         NavigationStack {
             List {
                 Section {
-                    HStack {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(Shell.accent)
+                    HStack(spacing: 14) {
+                        WAAvatar(size: 58)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(identity.nickname)
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(Shell.textPrimary)
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(WA.textPrimary)
                             Text("本机临时身份")
-                                .font(.system(size: 13))
-                                .foregroundStyle(Shell.textSecondary)
+                                .font(.system(size: 14))
+                                .foregroundStyle(WA.textSecondary)
                         }
                         Spacer()
                         Button("重掷") { identity.reroll() }
-                            .buttonStyle(WeChatTextButtonStyle())
+                            .buttonStyle(WATextButtonStyle())
                     }
-                    .listRowBackground(Shell.card)
+                    .padding(.vertical, 4)
                 }
 
                 Section("隐私") {
-                    Label("无服务器、无账号", systemImage: "lock.shield")
-                    Label("数据不出设备", systemImage: "iphone")
-                    Label("线程本地删除即彻底消失", systemImage: "trash")
+                    settingsRow(icon: "lock.fill", color: WA.accent, text: "无服务器、无账号")
+                    settingsRow(icon: "iphone", color: .blue, text: "数据不出设备")
+                    settingsRow(icon: "trash.fill", color: .red, text: "线程本地删除即彻底消失")
                 }
-                .foregroundStyle(Shell.textPrimary)
-                .listRowBackground(Shell.card)
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Shell.page)
             .navigationTitle("我")
+        }
+    }
+
+    /// WhatsApp/iOS 设置行形态：28pt 彩色圆角方图标 + 文案。
+    private func settingsRow(icon: String, color: Color, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(color, in: RoundedRectangle(cornerRadius: 6))
+            Text(text)
+                .font(.system(size: 17))
+                .foregroundStyle(WA.textPrimary)
         }
     }
 }
