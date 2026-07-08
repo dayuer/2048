@@ -112,6 +112,11 @@ struct RainmakerState: Codable, Equatable, Sendable {
     var cardInventory: [String]?
     /// 已解锁的商业绝密档案。Optional 兼容旧存档。
     var unlockedArchives: [String]?
+    /// 市场气候（世界观宏观变量）。Optional 兼容旧存档，读取一律走 climate。
+    var marketClimate: MarketClimate?
+
+    /// 当前气候，缺省中性。
+    var climate: MarketClimate { marketClimate ?? .neutral }
 
     init(
         day: Int, cash: Int, reputation: Int, ap: Int, isGameOver: Bool,

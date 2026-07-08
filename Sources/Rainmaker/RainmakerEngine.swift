@@ -33,7 +33,10 @@ enum RainmakerEngine {
             ),
             to: assistantNPCID, in: &state
         )
-        generateDayContent(state: &state, dealCount: 2, using: &rng, now: now)
+        state.marketClimate = .neutral
+        for event in WorldEventScheduler.rollOpening(dealCount: 2, using: &rng) {
+            WorldEventScheduler.apply(event, to: &state, using: &rng, now: now)
+        }
         return state
     }
 
@@ -96,42 +99,14 @@ enum RainmakerEngine {
 
         state.day += 1
         state.ap = RainmakerBalance.apPerDay
-        let dealCount = 1 + Int(rng.next() % 2)
-        generateDayContent(state: &state, dealCount: dealCount, using: &rng, now: now)
+        for event in WorldEventScheduler.rollDay(state: state, using: &rng) {
+            WorldEventScheduler.apply(event, to: &state, using: &rng, now: now)
+        }
     }
 
     // MARK: - 私有
 
-    /// 为新的一天生成内容：随机挑 NPC 各发一句寒暄 + 一张项目卡。
-    private static func generateDayContent(
-        state: inout RainmakerState,
-        dealCount: Int,
-        using rng: inout some RandomNumberGenerator,
-        now: Date
-    ) {
-        let senders = NPCCatalog.contacts.shuffled(using: &rng).prefix(dealCount)
-        for npc in senders {
-            let template = npc.dealTemplates.randomElement(using: &rng)!
-            let deal = DealOffer(
-                id: uuid(using: &rng),
-                npcID: npc.id,
-                title: template.title,
-                valuation: Int.random(in: template.valuationRange, using: &rng),
-                commission: Int.random(in: template.commissionRange, using: &rng),
-                apCost: RainmakerBalance.dealAPCost,
-                status: .offered
-            )
-            state.deals.append(deal)
-            append(.npcText(id: uuid(using: &rng),
-                            text: npc.greetings.randomElement(using: &rng)!,
-                            at: now),
-                   to: npc.id, in: &state)
-            append(.dealOffer(id: uuid(using: &rng), dealID: deal.id, at: now),
-                   to: npc.id, in: &state)
-        }
-    }
-
-    /// 追加事件；线程不存在则新建。（NegotiationEngine 共用）
+    /// 追加事件；线程不存在则新建。（NegotiationEngine / WorldEventScheduler 共用）
     static func append(_ event: RainmakerEvent, to npcID: String, in state: inout RainmakerState) {
         if let index = state.threads.firstIndex(where: { $0.id == npcID }) {
             state.threads[index].events.append(event)
