@@ -59,54 +59,7 @@ final class RainmakerEngineTests: XCTestCase {
         XCTAssertEqual(newRun(seed: 42), newRun(seed: 42))
     }
 
-    // MARK: - 接单
-
-    func testAcceptConsumesAPAndMarksAccepted() {
-        var state = newRun()
-        let deal = firstOffered(state)
-        let apBefore = state.ap
-
-        XCTAssertTrue(RainmakerEngine.accept(dealID: deal.id, in: &state, now: day0))
-
-        XCTAssertEqual(state.ap, apBefore - deal.apCost)
-        XCTAssertEqual(state.deals.first { $0.id == deal.id }?.status, .accepted)
-    }
-
-    func testAcceptFailsWithoutAP() {
-        var state = newRun()
-        state.ap = 0
-        let deal = firstOffered(state)
-
-        XCTAssertFalse(RainmakerEngine.accept(dealID: deal.id, in: &state, now: day0))
-        XCTAssertEqual(state.deals.first { $0.id == deal.id }?.status, .offered)
-    }
-
-    func testAcceptFailsWhenAlreadyAccepted() {
-        var state = newRun()
-        let deal = firstOffered(state)
-        XCTAssertTrue(RainmakerEngine.accept(dealID: deal.id, in: &state, now: day0))
-        let apAfterFirst = state.ap
-
-        XCTAssertFalse(RainmakerEngine.accept(dealID: deal.id, in: &state, now: day0))
-        XCTAssertEqual(state.ap, apAfterFirst, "重复接单不得再扣 AP")
-    }
-
     // MARK: - 每日结算
-
-    func testEndDayPaysAcceptedDealAndReputation() {
-        var state = newRun()
-        let deal = firstOffered(state)
-        RainmakerEngine.accept(dealID: deal.id, in: &state, now: day0)
-        let cashBefore = state.cash
-        let repBefore = state.reputation
-
-        var rng = SeededGenerator(seed: 1)
-        RainmakerEngine.endDay(state: &state, using: &rng, now: day0)
-
-        XCTAssertEqual(state.cash, cashBefore + deal.commission - RainmakerBalance.burnRate)
-        XCTAssertEqual(state.reputation, repBefore + RainmakerBalance.dealReputationReward)
-        XCTAssertEqual(state.deals.first { $0.id == deal.id }?.status, .paid)
-    }
 
     func testEndDayExpiresUnacceptedOffers() {
         var state = newRun()
@@ -173,12 +126,12 @@ final class RainmakerEngineTests: XCTestCase {
         var withDeal = frozen
         withDeal.deals = [
             DealOffer(
-                id: UUID(), npcID: RainmakerEngine.assistantNPCID, title: "测试",
+                id: UUID(), npcID: "chen", title: "测试",
                 valuation: 100, commission: 10, apCost: 1, status: .offered
             )
         ]
         let dealID = withDeal.deals[0].id
-        XCTAssertFalse(RainmakerEngine.accept(dealID: dealID, in: &withDeal, now: day0))
+        XCTAssertFalse(NegotiationEngine.start(dealID: dealID, state: &withDeal, using: &rng, now: day0))
     }
 
     // MARK: - 存档

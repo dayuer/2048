@@ -30,6 +30,11 @@ struct RainmakerThreadView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if store.state.activeNegotiation?.npcID == npcID {
+                NegotiationPanel(store: store)
+            }
+        }
         .navigationTitle(profile.map { "\($0.name) · \($0.role)" } ?? npcID)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -53,8 +58,13 @@ struct RainmakerThreadView: View {
             SystemNoticePill(text: text)
         case let .dealOffer(_, dealID, _):
             if let deal = store.state.deals.first(where: { $0.id == dealID }) {
-                DealCardBubble(deal: deal, ap: store.state.ap) {
-                    store.accept(dealID: deal.id)
+                DealCardBubble(
+                    deal: deal,
+                    canStart: store.state.ap >= deal.apCost
+                        && store.state.reputation >= RainmakerBalance.negotiationRepStake
+                        && store.state.activeNegotiation == nil
+                ) {
+                    store.startNegotiation(dealID: deal.id)
                 }
             }
         }
@@ -103,11 +113,11 @@ private struct SystemNoticePill: View {
     }
 }
 
-/// 项目卡片气泡：商业计划书 + 接单按钮。状态四态直接显示在卡上。
+/// 项目卡片气泡：商业计划书 + 开始尽调按钮。状态直接显示在卡上。
 private struct DealCardBubble: View {
     let deal: DealOffer
-    let ap: Int
-    let onAccept: () -> Void
+    let canStart: Bool
+    let onStart: () -> Void
 
     var body: some View {
         HStack {
@@ -124,8 +134,9 @@ private struct DealCardBubble: View {
                     .foregroundStyle(WA.textPrimary)
                 HStack(spacing: 14) {
                     metric(label: "目标估值", value: "\(deal.valuation) 万")
-                    metric(label: "成功佣金", value: "\(deal.commission) 万")
-                    metric(label: "精力", value: "-\(deal.apCost)")
+                    metric(label: "最高佣金", value: "\(deal.commission) 万")
+                    metric(label: "工时", value: "-\(deal.apCost)")
+                    metric(label: "押信誉", value: "\(RainmakerBalance.negotiationRepStake)")
                 }
                 actionArea
             }
@@ -153,19 +164,21 @@ private struct DealCardBubble: View {
     private var actionArea: some View {
         switch deal.status {
         case .offered:
-            Button(action: onAccept) {
-                Text(ap >= deal.apCost ? "接单（-\(deal.apCost) 工时）" : "尽调工时不足")
+            Button(action: onStart) {
+                Text(canStart ? "开始尽调谈判" : "工时/信誉不足或另有谈判")
                     .font(.system(size: 15, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
             .tint(WA.accent)
-            .disabled(ap < deal.apCost)
-        case .accepted:
-            statusLabel("已接单 · 明日结算", icon: "clock.fill", tint: .orange)
-        case .paid:
-            statusLabel("已交割 · 佣金 +\(deal.commission) 万", icon: "checkmark.seal.fill", tint: WA.accent)
+            .disabled(!canStart)
+        case .negotiating:
+            statusLabel("谈判进行中", icon: "bubble.left.and.exclamationmark.bubble.right.fill", tint: .orange)
+        case .won:
+            statusLabel("已成交 · 佣金到账", icon: "checkmark.seal.fill", tint: WA.accent)
+        case .busted:
+            statusLabel("交易流产", icon: "xmark.circle.fill", tint: .red)
         case .expired:
             statusLabel("已过期", icon: "xmark.circle.fill", tint: .gray)
         }
@@ -177,5 +190,103 @@ private struct DealCardBubble: View {
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
+    }
+}
+
+/// 谈判面板：对方底线估值条 + 手上的策略包 + 同意签约。
+/// PRD 4.2/4.3：出牌算分 chips × mult，见好就收 vs 继续压价（爆仓风险）。
+private struct NegotiationPanel: View {
+    @Bindable var store: RainmakerStore
+
+    private var session: NegotiationSession? { store.state.activeNegotiation }
+
+    var body: some View {
+        if let session {
+            VStack(spacing: 10) {
+                // 底线估值条（越低压得越狠、佣金越高）
+                VStack(spacing: 4) {
+                    HStack {
+                        Text("对方底线估值")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(WA.textSecondary)
+                        Spacer()
+                        Text("\(session.defense) / \(session.defenseMax)")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(WA.textPrimary)
+                            .monospacedDigit()
+                    }
+                    ProgressView(value: Double(session.defense), total: Double(session.defenseMax))
+                        .tint(session.defense <= Int(Double(session.defenseMax) * RainmakerBalance.signUnlockRatio) ? WA.accent : .orange)
+                }
+
+                // 手牌：横滑策略包
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(session.hand, id: \.self) { cardID in
+                            if let card = CardCatalog.card(id: cardID) {
+                                Button {
+                                    store.play(cardID: cardID)
+                                } label: {
+                                    StrategyCardFace(card: card)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+
+                // 见好就收
+                Button {
+                    store.sign()
+                } label: {
+                    Text(NegotiationEngine.canSign(state: store.state)
+                         ? "同意签约 · 预计佣金 \(NegotiationEngine.estimatedPayout(state: store.state) ?? 0) 万"
+                         : "还压不动对方——继续出牌或认栽")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(WA.accent)
+                .disabled(!NegotiationEngine.canSign(state: store.state))
+            }
+            .padding(12)
+            .background(.thinMaterial)
+        }
+    }
+}
+
+/// 策略包卡面：名称 + 筹码×倍率 + 特效角标。
+private struct StrategyCardFace: View {
+    let card: TalkCard
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(card.name)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(WA.textPrimary)
+                .lineLimit(1)
+            HStack(spacing: 4) {
+                Text("\(card.chips)")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.blue)
+                Text("× \(String(format: "%.1f", card.mult))")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.red)
+            }
+            .monospacedDigit()
+            if let effect = card.effect {
+                Text(effect == .vamHighRisk ? "⚠️ 高危" : "🛡 保本")
+                    .font(.system(size: 10))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(width: 118, alignment: .leading)
+        .background(WA.bubbleIn, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(WA.separator, lineWidth: 0.5)
+        )
     }
 }

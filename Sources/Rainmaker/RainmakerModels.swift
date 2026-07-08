@@ -11,15 +11,29 @@ enum RainmakerBalance {
     static let dealReputationReward = 2
     /// Phase 1 接单统一 AP 成本。
     static let dealAPCost = 1
+
+    // MARK: 谈判（Phase 2）
+
+    /// 入场抵押信誉：爆仓不退，对赌爆仓翻倍扣。
+    static let negotiationRepStake = 5
+    /// 开局手牌数：打空即交易流产。
+    static let handSize = 6
+    /// 防线降到该比例以下解锁【同意签约】（见好就收）。
+    static let signUnlockRatio = 0.6
+    /// 优先清算权在手时的佣金保底比例。
+    static let payoutFloorRatio = 0.4
+    /// 底线估值 = 项目估值 / 100，夹在此区间。
+    static let defenseRange = 25...150
 }
 
-/// NPC 发来的项目单（商业计划书卡片）。Phase 1 简化：接单→次日结算发佣金。
+/// NPC 发来的项目单（商业计划书卡片）。Phase 2：接单即进入条款谈判。
 struct DealOffer: Codable, Equatable, Identifiable, Sendable {
     enum Status: String, Codable, Sendable {
-        case offered    // 卡片已发出，等玩家接
-        case accepted   // 已接，占用 AP，次日结算
-        case paid       // 已交割，佣金已入账
-        case expired    // 当日未接，作废
+        case offered      // 卡片已发出，等玩家开始尽调
+        case negotiating  // 谈判进行中（占用 activeNegotiation）
+        case won          // 签约/击破成交，佣金已入账
+        case busted       // 交易流产（爆仓/拖延），抵押信誉没收
+        case expired      // 当日未接，作废
     }
 
     let id: UUID
@@ -67,7 +81,7 @@ struct NPCThread: Codable, Equatable, Identifiable, Sendable {
     var lastEventAt: Date { events.last?.at ?? .distantPast }
 }
 
-/// 整局游戏状态：资源 + 项目 + 线程。纯 Codable，单一存档。
+/// 整局游戏状态：资源 + 项目 + 线程 + 进行中的谈判。纯 Codable，单一存档。
 struct RainmakerState: Codable, Equatable, Sendable {
     var day: Int
     var cash: Int
@@ -76,4 +90,20 @@ struct RainmakerState: Codable, Equatable, Sendable {
     var isGameOver: Bool
     var deals: [DealOffer]
     var threads: [NPCThread]
+    /// 同一时间只允许一场谈判（PRD：深度沟通独占注意力）。
+    var activeNegotiation: NegotiationSession?
+
+    init(
+        day: Int, cash: Int, reputation: Int, ap: Int, isGameOver: Bool,
+        deals: [DealOffer], threads: [NPCThread], activeNegotiation: NegotiationSession? = nil
+    ) {
+        self.day = day
+        self.cash = cash
+        self.reputation = reputation
+        self.ap = ap
+        self.isGameOver = isGameOver
+        self.deals = deals
+        self.threads = threads
+        self.activeNegotiation = activeNegotiation
+    }
 }

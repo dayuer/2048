@@ -36,7 +36,7 @@ struct ProfileView: View {
                 Section("本局") {
                     LabeledContent("资金", value: "\(store.state.cash) 万")
                     LabeledContent("信誉", value: "\(store.state.reputation)")
-                    LabeledContent("已交割项目", value: "\(store.state.deals.filter { $0.status == .paid }.count) 单")
+                    LabeledContent("已成交项目", value: "\(store.state.deals.filter { $0.status == .won }.count) 单")
                     LabeledContent("每日开销", value: "\(RainmakerBalance.burnRate) 万")
                 }
 

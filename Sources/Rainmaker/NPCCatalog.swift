@@ -6,10 +6,25 @@ struct NPCProfile: Identifiable, Sendable {
     let name: String
     let role: String
     let icon: String
+    /// 对手类型：决定哪些策略包对其无效（知识教学矩阵）。
+    let traits: [NPCTrait]
     /// 发项目单前的寒暄台词池。
     let greetings: [String]
     /// 项目单模板池。
     let dealTemplates: [DealTemplate]
+
+    init(
+        id: String, name: String, role: String, icon: String,
+        traits: [NPCTrait] = [], greetings: [String], dealTemplates: [DealTemplate]
+    ) {
+        self.id = id
+        self.name = name
+        self.role = role
+        self.icon = icon
+        self.traits = traits
+        self.greetings = greetings
+        self.dealTemplates = dealTemplates
+    }
 }
 
 /// 项目单模板：估值/佣金在区间内随机，保证同种子同结果。
@@ -37,6 +52,7 @@ enum NPCCatalog {
             name: "陈总",
             role: "SaaS 创始人",
             icon: "laptopcomputer",
+            traits: [.preRevenue],   // 烧钱换增长——别跟他提市盈率
             greetings: [
                 "老朋友，最近手头有点紧，融资的事还得靠你。",
                 "在吗？我们数据涨得不错，是时候推下一轮了。",
@@ -51,6 +67,7 @@ enum NPCCatalog {
             name: "周老板",
             role: "连锁餐饮",
             icon: "fork.knife",
+            traits: [.traditional],  // 看翻台率坪效——别跟他谈日活
             greetings: [
                 "兄弟，我这三十家店想再开五十家，帮我找钱。",
                 "有个同行想卖盘子，你看看能不能撮合。",
@@ -65,6 +82,7 @@ enum NPCCatalog {
             name: "马姐",
             role: "基金合伙人",
             icon: "chart.line.uptrend.xyaxis",
+            traits: [.institutional],  // 机构老兵——PPT 大饼对她无效
             greetings: [
                 "我们二期基金要出手了，帮我筛几个好项目。",
                 "有个 LP 想退，帮我找份额买家，费用好说。",
@@ -79,6 +97,7 @@ enum NPCCatalog {
             name: "大刘",
             role: "产业园招商",
             icon: "building.2",
+            traits: [.traditional],
             greetings: [
                 "园区给的返税政策批下来了，帮我拉两家企业过来。",
                 "有家制造业想搬迁，撮合成了给你介绍费。",

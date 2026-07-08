@@ -29,11 +29,12 @@ final class RainmakerStoreTests: XCTestCase {
         guard let deal = store.state.deals.first(where: { $0.status == .offered }) else {
             return XCTFail("开局应有可接项目")
         }
-        store.accept(dealID: deal.id)
+        store.startNegotiation(dealID: deal.id)
 
         let reloaded = RainmakerStore(fileURL: fileURL)
         XCTAssertEqual(reloaded.state, store.state)
-        XCTAssertEqual(reloaded.state.deals.first { $0.id == deal.id }?.status, .accepted)
+        XCTAssertEqual(reloaded.state.deals.first { $0.id == deal.id }?.status, .negotiating)
+        XCTAssertEqual(reloaded.state.activeNegotiation?.dealID, deal.id)
     }
 
     func testEndDayPersists() {

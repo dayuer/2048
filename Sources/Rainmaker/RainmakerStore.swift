@@ -28,10 +28,24 @@ final class RainmakerStore {
     }
 
     @discardableResult
-    func accept(dealID: UUID) -> Bool {
-        let accepted = RainmakerEngine.accept(dealID: dealID, in: &state, now: .now)
-        if accepted { persist() }
-        return accepted
+    func startNegotiation(dealID: UUID) -> Bool {
+        let started = NegotiationEngine.start(dealID: dealID, state: &state, using: &rng, now: .now)
+        if started { persist() }
+        return started
+    }
+
+    @discardableResult
+    func play(cardID: String) -> NegotiationEngine.PlayOutcome? {
+        let outcome = NegotiationEngine.play(cardID: cardID, state: &state, using: &rng, now: .now)
+        if outcome != nil { persist() }
+        return outcome
+    }
+
+    @discardableResult
+    func sign() -> Int? {
+        let payout = NegotiationEngine.sign(state: &state, using: &rng, now: .now)
+        if payout != nil { persist() }
+        return payout
     }
 
     func endDay() {
