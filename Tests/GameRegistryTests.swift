@@ -12,6 +12,13 @@ import Testing
         #expect(Set(ids).count == ids.count)
     }
 
+    @Test func pluginsHaveAgentPresentation() {
+        for plugin in GameRegistry.all {
+            #expect(!plugin.tagline.isEmpty)
+            #expect(!plugin.tags.isEmpty)
+        }
+    }
+
     @Test func has2048Plugin() {
         let plugin = GameRegistry.all.first { $0.id == "game2048" }
         #expect(plugin != nil)
