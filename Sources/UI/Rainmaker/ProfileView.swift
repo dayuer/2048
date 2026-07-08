@@ -3,8 +3,10 @@ import SwiftUI
 /// 我的：掮客档案 + 本局数据 + 重开局。
 struct ProfileView: View {
     @Bindable var store: RainmakerStore
+    @Bindable var llmSettings: LLMSettingsStore
     @State private var confirmRestart = false
     @State private var confirmEndDay = false
+    @State private var showBank = false
 
     /// 职场进阶线：信誉决定职级（后续按职级解锁卡池与高阶对手）。
     private var rankTitle: String {
@@ -80,14 +82,8 @@ struct ProfileView: View {
                         }
                         .disabled(store.state.cash < RainmakerBalance.healCostPerPoint)
                     }
-                    HStack {
-                        Button("现金全存银行") { store.deposit(amount: store.state.cash) }
-                            .disabled(store.state.cash <= 0)
-                        Spacer()
-                        Button("存款全取") { store.withdraw(amount: store.state.currentBankDeposit) }
-                            .disabled(store.state.currentBankDeposit <= 0)
-                    }
-                    .buttonStyle(.borderless)
+                    Button("银行存取（按金额）") { showBank = true }
+                        .disabled(store.state.cash <= 0 && store.state.currentBankDeposit <= 0)
                     Button("托管扩容 +\(RainmakerBalance.capacityUpgradeGain) 手（\(RainmakerBalance.capacityUpgradeCost) 万）") {
                         store.upgradeCapacity()
                     }
@@ -102,6 +98,20 @@ struct ProfileView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        LLMSettingsView(llm: llmSettings)
+                    } label: {
+                        LabeledContent("对话引擎") {
+                            Text(llmSettings.activeConfig?.name ?? "内置台词池")
+                        }
+                    }
+                } header: {
+                    Text("AI 引擎")
+                } footer: {
+                    Text("接入大模型后，联系人聊天与谈判桌台词按人设实时生成。")
+                }
+
+                Section {
                     Button("重新开局", role: .destructive) { confirmRestart = true }
                 } footer: {
                     Text("数据只存在本机，无账号、无云端。")
@@ -110,6 +120,10 @@ struct ProfileView: View {
             .listStyle(.insetGrouped)
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .sheet(isPresented: $showBank) {
+            BankSheet(store: store)
+                .presentationDetents([.medium])
         }
         .confirmationDialog(
             "确定重新开局？当前进度将清空。",

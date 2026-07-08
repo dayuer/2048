@@ -29,6 +29,106 @@ struct MarketSheet: View {
     }
 }
 
+// MARK: - 银行存取（按金额，带「存后现金剩余」提示，杜绝一键全存爆现金流）
+
+struct BankSheet: View {
+    @Bindable var store: RainmakerStore
+    @Environment(\.dismiss) private var dismiss
+
+    private enum Side { case deposit, withdraw }
+    @State private var side: Side = .deposit
+    @State private var amount = 0
+
+    private var cash: Int { store.state.cash }
+    private var saved: Int { store.state.currentBankDeposit }
+    private var maxAmount: Int { side == .deposit ? cash : saved }
+    private var clamped: Int { min(max(0, amount), maxAmount) }
+    /// 操作后现金——存款会减现金，取款会加现金。让玩家看清现金流后果。
+    private var cashAfter: Int { side == .deposit ? cash - clamped : cash + clamped }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("现金").font(.caption).foregroundStyle(WA.textSecondary)
+                        Text("\(cash) 万").font(.title3.weight(.bold)).monospacedDigit()
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("银行存款 · 日息 1%").font(.caption).foregroundStyle(WA.textSecondary)
+                        Text("\(saved) 万").font(.title3.weight(.bold)).monospacedDigit()
+                    }
+                }
+
+                Picker("方向", selection: $side) {
+                    Text("存入").tag(Side.deposit)
+                    Text("取出").tag(Side.withdraw)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: side) { amount = 0 }
+
+                // 快捷金额：按上限裁剪，避免手滑全存
+                HStack(spacing: 8) {
+                    ForEach([100, 500, 1000], id: \.self) { chip in
+                        Button("\(chip)") { amount = min(chip, maxAmount) }
+                            .buttonStyle(.bordered)
+                            .font(.footnote.weight(.semibold))
+                            .disabled(chip > maxAmount)
+                    }
+                    Button("一半") { amount = maxAmount / 2 }
+                        .buttonStyle(.bordered).font(.footnote.weight(.semibold))
+                        .disabled(maxAmount < 2)
+                    Button("全部") { amount = maxAmount }
+                        .buttonStyle(.bordered).font(.footnote.weight(.semibold))
+                        .disabled(maxAmount <= 0)
+                }
+
+                Stepper(value: $amount, in: 0...max(0, maxAmount), step: 50) {
+                    Text("金额 \(clamped) 万").font(.body.weight(.semibold)).monospacedDigit()
+                }
+                .disabled(maxAmount <= 0)
+
+                // 现金流后果提示——存太多会红字警告
+                HStack {
+                    Text("操作后现金")
+                        .font(.subheadline).foregroundStyle(WA.textSecondary)
+                    Spacer()
+                    Text("\(cashAfter) 万")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(cashAfter < RainmakerBalance.burnRate ? .red : WA.textPrimary)
+                        .monospacedDigit()
+                }
+                if side == .deposit, cashAfter < RainmakerBalance.burnRate {
+                    Label("现金将不够明日固定开销 \(RainmakerBalance.burnRate) 万，当心断流破产。",
+                          systemImage: "exclamationmark.triangle")
+                        .font(.caption).foregroundStyle(.red)
+                }
+
+                Spacer(minLength: 0)
+
+                Button {
+                    if side == .deposit { store.deposit(amount: clamped) }
+                    else { store.withdraw(amount: clamped) }
+                    dismiss()
+                } label: {
+                    Text(side == .deposit ? "存入 \(clamped) 万" : "取出 \(clamped) 万")
+                        .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(WA.accent)
+                .disabled(clamped < 1)
+            }
+            .padding(20)
+            .navigationTitle("银行")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("关闭") { dismiss() } }
+            }
+        }
+    }
+}
+
 // MARK: - 「+」附件 sheet：还款（资方线程）
 
 struct RepaySheet: View {
