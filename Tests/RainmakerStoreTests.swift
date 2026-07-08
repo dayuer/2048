@@ -1,0 +1,57 @@
+import XCTest
+@testable import Game2048
+
+/// RainmakerStore：单档 JSON 持久化 + UI 单一真相源。
+@MainActor
+final class RainmakerStoreTests: XCTestCase {
+    private var fileURL: URL!
+
+    override func setUp() {
+        super.setUp()
+        fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rainmaker-test-\(UUID().uuidString).json")
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: fileURL)
+        super.tearDown()
+    }
+
+    func testFreshStoreStartsNewRun() {
+        let store = RainmakerStore(fileURL: fileURL)
+        XCTAssertEqual(store.state.day, 1)
+        XCTAssertFalse(store.state.isGameOver)
+        XCTAssertFalse(store.state.deals.isEmpty)
+    }
+
+    func testStatePersistsAcrossReload() {
+        let store = RainmakerStore(fileURL: fileURL)
+        guard let deal = store.state.deals.first(where: { $0.status == .offered }) else {
+            return XCTFail("开局应有可接项目")
+        }
+        store.accept(dealID: deal.id)
+
+        let reloaded = RainmakerStore(fileURL: fileURL)
+        XCTAssertEqual(reloaded.state, store.state)
+        XCTAssertEqual(reloaded.state.deals.first { $0.id == deal.id }?.status, .accepted)
+    }
+
+    func testEndDayPersists() {
+        let store = RainmakerStore(fileURL: fileURL)
+        store.endDay()
+
+        let reloaded = RainmakerStore(fileURL: fileURL)
+        XCTAssertEqual(reloaded.state.day, store.state.day)
+    }
+
+    func testRestartResetsRun() {
+        let store = RainmakerStore(fileURL: fileURL)
+        store.endDay()
+        XCTAssertGreaterThan(store.state.day, 1)
+
+        store.restart()
+        XCTAssertEqual(store.state.day, 1)
+        XCTAssertEqual(store.state.cash, RainmakerBalance.startCash)
+        XCTAssertFalse(store.state.isGameOver)
+    }
+}
