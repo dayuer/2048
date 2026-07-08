@@ -30,16 +30,6 @@ struct MessagesView: View {
                     .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                     .listRowSeparatorTint(WA.separator)
 
-                    // 置顶「跑市场」入口：伪装成一根置顶会话（顶栏保持 WhatsApp 原样）
-                    Button {
-                        showTravel = true
-                    } label: {
-                        TravelRow(store: store)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                    .listRowSeparatorTint(WA.separator)
-
                     ForEach(threads) { thread in
                         ZStack {
                             // 隐形跳转层：去掉系统 chevron（WhatsApp 行没有箭头）
@@ -69,13 +59,17 @@ struct MessagesView: View {
                 NoticeCenterView(store: store)
             }
             .toolbar {
-                // WhatsApp 主列表顶栏原样：相机（观感）+ 绿色加号
+                // 跑市场：飞一座城市 = 一天（顶栏右上，游戏化航班图标）
                 ToolbarItem(placement: .topBarTrailing) {
-                    Image(systemName: "camera")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(WA.textPrimary)
-                        .frame(width: 34, height: 34)
-                        .background(WA.separator.opacity(0.6), in: Circle())
+                    Button {
+                        showTravel = true
+                    } label: {
+                        Image(systemName: "airplane.departure")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(WA.textPrimary)
+                            .frame(width: 34, height: 34)
+                            .background(WA.separator.opacity(0.6), in: Circle())
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -181,34 +175,6 @@ private struct ThreadRow: View {
                             .background(WA.accent, in: Capsule())
                     }
                 }
-            }
-        }
-    }
-}
-
-/// 置顶「跑市场」行：伪装成置顶会话（地图头像 + 当前城市 + 定位一句话）。
-private struct TravelRow: View {
-    @Bindable var store: RainmakerStore
-
-    private var venue: TradeVenue? { TradeCatalog.venue(id: store.state.currentVenueID) }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            WAAvatar(systemImage: "map.fill", background: .teal)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("跑市场")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(WA.textPrimary)
-                    Spacer(minLength: 8)
-                    Text("当前 · \(venue?.name ?? "北京")")
-                        .font(.subheadline)
-                        .foregroundStyle(WA.accent)
-                }
-                Text(venue?.tagline ?? "飞一座城市 = 一天")
-                    .font(.subheadline)
-                    .foregroundStyle(WA.textSecondary)
-                    .lineLimit(2)
             }
         }
     }
