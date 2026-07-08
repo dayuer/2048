@@ -143,7 +143,8 @@ enum Glossary {
         GlossaryEntry(
             id: "lbo", term: "杠杆收购", english: "LBO / Leveraged Buyout", category: .ecosystem,
             definition: "用少量自有资金 + 大量债务收购公司，再用公司自身现金流还债。1988 年 RJR 纳贝斯克 250 亿美元世纪之战使其登峰造极——「门口的野蛮人」由此得名。",
-            source: "《门口的野蛮人》Burrough & Helyar"
+            source: "《门口的野蛮人》Burrough & Helyar",
+            relatedCardIDs: ["barbarians"]
         ),
     ]
 

@@ -14,7 +14,7 @@ struct RainmakerRootView: View {
             ContactsView(store: store)
                 .tabItem { Label("通讯录", systemImage: "person.2.fill") }
 
-            DiscoverView()
+            DiscoverView(store: store)
                 .tabItem { Label("发现", systemImage: "safari.fill") }
 
             ProfileView(store: store)

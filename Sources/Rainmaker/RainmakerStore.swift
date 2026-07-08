@@ -75,6 +75,14 @@ final class RainmakerStore {
         commit()
     }
 
+    /// 沙盘顿悟：里程碑 → 掉卡/档案/属性（由沙盘承载页转发）。
+    @discardableResult
+    func recordMilestone(_ value: Int) -> EpiphanyReward? {
+        let reward = EpiphanyEngine.recordMilestone(value, state: &state, using: &rng, now: .now)
+        if reward != nil { commit() }
+        return reward
+    }
+
     /// 破产重开 / 手动重开：整局重置，开场消息按投递节奏逐条进来。
     func restart() {
         for task in deliveryTasks.values { task.cancel() }

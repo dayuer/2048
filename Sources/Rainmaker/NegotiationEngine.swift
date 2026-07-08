@@ -54,14 +54,22 @@ enum NegotiationEngine {
             max(deal.valuation / 100, RainmakerBalance.defenseRange.lowerBound),
             RainmakerBalance.defenseRange.upperBound
         )
-        let hand = CardCatalog.rookiePool
+        var hand = CardCatalog.rookiePool
             .shuffled(using: &rng)
             .prefix(RainmakerBalance.handSize)
             .map(\.id)
+        // 沙盘顿悟的库存卡：最多带 inventoryHandBonus 张，开局即消耗（一次性）
+        var inventory = state.cardInventory ?? []
+        let carried = inventory.prefix(RainmakerBalance.inventoryHandBonus)
+        if !carried.isEmpty {
+            hand.append(contentsOf: carried)
+            inventory.removeFirst(carried.count)
+            state.cardInventory = inventory
+        }
         state.activeNegotiation = NegotiationSession(
             dealID: deal.id, npcID: deal.npcID,
             defenseMax: defense, defense: defense,
-            hand: Array(hand), playedInvalid: [], playedCount: 0,
+            hand: hand, playedInvalid: [], playedCount: 0,
             vamPlayed: false, floorUnlocked: false,
             repStake: RainmakerBalance.negotiationRepStake
         )

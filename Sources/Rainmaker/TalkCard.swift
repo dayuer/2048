@@ -113,7 +113,16 @@ enum CardCatalog {
         ),
     ]
 
+    /// 传说卡：不进常规抓牌池，只能从沙盘顿悟/档案解锁掉落（一次性）。
+    static let legendaryPool: [TalkCard] = [
+        TalkCard(
+            id: "barbarians", name: "野蛮人敲门", chips: 25, mult: 2.0,
+            knowledge: "杠杆收购（LBO）的终极威慑——1988 年 RJR 纳贝斯克 250 亿美元世纪之战的开场白。",
+            glossaryID: "lbo"
+        ),
+    ]
+
     static func card(id: String) -> TalkCard? {
-        rookiePool.first { $0.id == id }
+        rookiePool.first { $0.id == id } ?? legendaryPool.first { $0.id == id }
     }
 }

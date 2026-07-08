@@ -21,9 +21,9 @@ final class GlossaryTests: XCTestCase {
         XCTAssertNil(Glossary.entry(id: "no-such-term"))
     }
 
-    /// 每张策略包卡牌都必须挂一个存在的词条（点击 ⓘ 必有着落）。
+    /// 每张策略包卡牌（含传说卡）都必须挂一个存在的词条（点击 ⓘ 必有着落）。
     func testEveryCardLinksToExistingEntry() {
-        for card in CardCatalog.rookiePool {
+        for card in CardCatalog.rookiePool + CardCatalog.legendaryPool {
             XCTAssertNotNil(
                 Glossary.entry(id: card.glossaryID),
                 "卡【\(card.name)】的词条 \(card.glossaryID) 不存在"

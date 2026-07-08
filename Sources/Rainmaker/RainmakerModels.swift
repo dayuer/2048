@@ -24,6 +24,13 @@ enum RainmakerBalance {
     static let payoutFloorRatio = 0.4
     /// 底线估值 = 项目估值 / 100，夹在此区间。
     static let defenseRange = 25...150
+
+    // MARK: 顿悟（Phase 3）
+
+    /// 卡库容量：沙盘掉卡囤积上限。
+    static let cardInventoryCap = 5
+    /// 每场谈判最多从卡库带走的卡数（开局即消耗）。
+    static let inventoryHandBonus = 2
 }
 
 /// NPC 发来的项目单（商业计划书卡片）。Phase 2：接单即进入条款谈判。
@@ -101,6 +108,10 @@ struct RainmakerState: Codable, Equatable, Sendable {
     /// 每根线程已读到的事件数（threadID → count）。
     /// Optional 以兼容旧存档（decodeIfPresent），一律走 unreadCount/markRead 访问。
     var readCounts: [String: Int]?
+    /// 沙盘顿悟掉落的一次性话术卡（下场谈判开局消耗）。Optional 兼容旧存档。
+    var cardInventory: [String]?
+    /// 已解锁的商业绝密档案。Optional 兼容旧存档。
+    var unlockedArchives: [String]?
 
     init(
         day: Int, cash: Int, reputation: Int, ap: Int, isGameOver: Bool,

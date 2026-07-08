@@ -5,10 +5,12 @@ struct GameView: View {
     @State private var viewModel: GameViewModel
     private let onExit: (() -> Void)?
 
-    init(onExit: (() -> Void)? = nil) {
+    init(onExit: (() -> Void)? = nil, onMilestone: ((Int) -> Void)? = nil) {
         let gameCenter = GameCenterManager()
         _gameCenter = State(initialValue: gameCenter)
-        _viewModel = State(initialValue: GameViewModel(gameCenter: gameCenter))
+        let viewModel = GameViewModel(gameCenter: gameCenter)
+        viewModel.onMilestone = onMilestone
+        _viewModel = State(initialValue: viewModel)
         self.onExit = onExit
     }
 
