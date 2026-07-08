@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wa-verify",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/verify-wa.sh"],
+      "port": 8765
+    }
+  ]
+}

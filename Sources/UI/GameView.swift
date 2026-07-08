@@ -1,14 +1,11 @@
 import SwiftUI
 
 struct GameView: View {
-    @State private var gameCenter: GameCenterManager
     @State private var viewModel: GameViewModel
     private let onExit: (() -> Void)?
 
     init(onExit: (() -> Void)? = nil, onMilestone: ((Int) -> Void)? = nil) {
-        let gameCenter = GameCenterManager()
-        _gameCenter = State(initialValue: gameCenter)
-        let viewModel = GameViewModel(gameCenter: gameCenter)
+        let viewModel = GameViewModel()
         viewModel.onMilestone = onMilestone
         _viewModel = State(initialValue: viewModel)
         self.onExit = onExit
@@ -54,7 +51,6 @@ struct GameView: View {
             }
             return .handled
         }
-        .task { gameCenter.authenticate() }
     }
 
     private var header: some View {
@@ -90,17 +86,6 @@ struct GameView: View {
                 .buttonStyle(.plain)
             }
             Spacer()
-            Button {
-                viewModel.showLeaderboard()
-            } label: {
-                Image(systemName: "trophy.fill")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Theme.lightText)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Theme.button, in: RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
             Button {
                 viewModel.newGame()
             } label: {

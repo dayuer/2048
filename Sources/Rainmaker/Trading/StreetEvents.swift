@@ -30,7 +30,7 @@ struct StreetIncident: Equatable, Sendable {
     let sound: String?
 }
 
-/// 静态事件目录：文案保留原版「俺」味，仅商品名创投化（资产映射与价格区间一一对应原版）。
+/// 静态事件目录：文案保留原版「你」味，仅商品名创投化（资产映射与价格区间一一对应原版）。
 /// 原版对照：香烟→尾轮跟投 / 汽车→独角兽老股 / VCD→天使轮原始股 / 白酒→壳公司牌照 /
 /// 小宝贝→突击入股额度 / 玩具→算力租赁券 / 手机→水货美元基金 / 化妆品→刷量数据包
 enum StreetEventCatalog {
@@ -66,43 +66,43 @@ enum StreetEventCatalog {
         MarketNews(freq: 18, assetID: "angel-stock",
                    headline: "原始股骗局曝光，「中国硅谷」——中关村全是抛售的散户!", effect: .crash(8)),
         MarketNews(freq: 160, assetID: "unicorn-stake",
-                   headline: "厦门的老同学资助俺两手独角兽老股！发了！！", effect: .gift(2)),
+                   headline: "厦门的老同学资助你两手独角兽老股！发了！！", effect: .gift(2)),
         MarketNews(freq: 45, assetID: "tail-round",
-                   headline: "专项检查扫荡后，俺在黑暗角落里发现了老乡丢失的尾轮份额。", effect: .gift(6)),
+                   headline: "专项检查扫荡后，你在黑暗角落里发现了老乡丢失的尾轮份额。", effect: .gift(6)),
         MarketNews(freq: 35, assetID: "shell-license",
-                   headline: "俺老乡回家前把几张壳公司牌照给俺!", effect: .gift(4)),
+                   headline: "你老乡回家前把几张壳公司牌照给你!", effect: .gift(4)),
         MarketNews(freq: 140, assetID: "usd-fund",
-                   headline: "村长得知美元基金出事的消息，托人把他手里的水货份额硬卖给您，记账 2500 万。",
+                   headline: "村长得知美元基金出事的消息，托人把他手里的水货份额硬卖给你，记账 2500 万。",
                    effect: .debtGift(1, debtCost: 2500)),
     ]
 
     // MARK: 街头事件（原版 random_event 伤身 12 条，音效名对齐原版 wav）
 
     static let healthIncidents: [StreetIncident] = [
-        StreetIncident(freq: 117, text: "大街上两个流氓打了俺!", effect: .healthDamage(3), sound: "kill"),
-        StreetIncident(freq: 157, text: "俺在过街地道被人打了蒙棍!", effect: .healthDamage(20), sound: "death"),
-        StreetIncident(freq: 21, text: "检查组的追俺超过三个胡同。", effect: .healthDamage(1), sound: "dog"),
-        StreetIncident(freq: 100, text: "北京拥挤的交通让俺心焦!", effect: .healthDamage(1), sound: "harley"),
-        StreetIncident(freq: 35, text: "开小巴的打俺一耳光!", effect: .healthDamage(1), sound: "hit"),
-        StreetIncident(freq: 313, text: "一群被爆雷项目坑过的维权群众打了俺!", effect: .healthDamage(10), sound: "flee"),
-        StreetIncident(freq: 120, text: "附近胡同的一个小青年砸俺一砖头!", effect: .healthDamage(5), sound: "death"),
-        StreetIncident(freq: 29, text: "附近写字楼一个假保安用电棍电击俺!", effect: .healthDamage(3), sound: "el"),
+        StreetIncident(freq: 117, text: "大街上两个流氓打了你!", effect: .healthDamage(3), sound: "kill"),
+        StreetIncident(freq: 157, text: "你在过街地道被人打了蒙棍!", effect: .healthDamage(20), sound: "death"),
+        StreetIncident(freq: 21, text: "检查组的追你超过三个胡同。", effect: .healthDamage(1), sound: "dog"),
+        StreetIncident(freq: 100, text: "北京拥挤的交通让你心焦!", effect: .healthDamage(1), sound: "harley"),
+        StreetIncident(freq: 35, text: "开小巴的打你一耳光!", effect: .healthDamage(1), sound: "hit"),
+        StreetIncident(freq: 313, text: "一群被爆雷项目坑过的维权群众打了你!", effect: .healthDamage(10), sound: "flee"),
+        StreetIncident(freq: 120, text: "附近胡同的一个小青年砸你一砖头!", effect: .healthDamage(5), sound: "death"),
+        StreetIncident(freq: 29, text: "附近写字楼一个假保安用电棍电击你!", effect: .healthDamage(3), sound: "el"),
         StreetIncident(freq: 43, text: "北京臭黑的小河熏着我了!", effect: .healthDamage(1), sound: "vomit"),
-        StreetIncident(freq: 45, text: "守自行车的王大婶嘲笑俺没北京户口!", effect: .healthDamage(1), sound: "level"),
-        StreetIncident(freq: 48, text: "北京高温40度!俺热...", effect: .healthDamage(1), sound: "lan"),
+        StreetIncident(freq: 45, text: "守自行车的王大婶嘲笑你没北京户口!", effect: .healthDamage(1), sound: "level"),
+        StreetIncident(freq: 48, text: "北京高温40度!你热...", effect: .healthDamage(1), sound: "lan"),
         StreetIncident(freq: 33, text: "申奥添了新风景，北京又来沙尘暴!", effect: .healthDamage(1), sound: "breath"),
     ]
 
     // MARK: 街头事件（原版 random_steal_event 敲诈 7 条，比例对齐）
 
     static let stealIncidents: [StreetIncident] = [
-        StreetIncident(freq: 60, text: "俺怜悯地铁口扮演成乞丐的老太太。", effect: .cashLossPercent(10), sound: nil),
-        StreetIncident(freq: 125, text: "一个汉子在街头拦住俺：「哥们，给点钱用!」。", effect: .cashLossPercent(10), sound: nil),
-        StreetIncident(freq: 100, text: "一个大个子碰了俺一下，说：「别挤了!」。", effect: .cashLossPercent(40), sound: nil),
-        StreetIncident(freq: 65, text: "三个带红袖章的老太太揪住俺：「你是外地人?罚款!」", effect: .cashLossPercent(20), sound: nil),
-        StreetIncident(freq: 35, text: "两个猛男揪住俺：「交尽调费、通道费。」", effect: .cashLossPercent(15), sound: nil),
+        StreetIncident(freq: 60, text: "你怜悯地铁口扮演成乞丐的老太太。", effect: .cashLossPercent(10), sound: nil),
+        StreetIncident(freq: 125, text: "一个汉子在街头拦住你：「哥们，给点钱用!」。", effect: .cashLossPercent(10), sound: nil),
+        StreetIncident(freq: 100, text: "一个大个子碰了你一下，说：「别挤了!」。", effect: .cashLossPercent(40), sound: nil),
+        StreetIncident(freq: 65, text: "三个带红袖章的老太太揪住你：「你是外地人?罚款!」", effect: .cashLossPercent(20), sound: nil),
+        StreetIncident(freq: 35, text: "两个猛男揪住你：「交尽调费、通道费。」", effect: .cashLossPercent(15), sound: nil),
         StreetIncident(freq: 27, text: "副主任说：「办牌照?晚上不要去我家给我送钱哦。」", effect: .cashLossPercent(10), sound: nil),
-        StreetIncident(freq: 40, text: "北京空气污染得厉害,俺去氧吧吸氧...", effect: .cashLossPercent(5), sound: nil),
+        StreetIncident(freq: 40, text: "北京空气污染得厉害,你去氧吧吸氧...", effect: .cashLossPercent(5), sound: nil),
     ]
 
     /// 原版触发判定：`RandomNum(bound) % freq == 0`。

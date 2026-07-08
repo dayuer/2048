@@ -8,8 +8,8 @@ import SwiftUI
 struct TradingPanel: View {
     @Bindable var store: RainmakerStore
     let dealerID: String
-    @State private var selectedAssetID: String?
-    @State private var quantity = 1
+    /// 点开的交易单（股票式：一次只处理一只，明确确认，杜绝误触）。
+    @State private var ticketAssetID: String?
 
     private var venue: TradeVenue? { TradeCatalog.venueOfDealer(dealerID) }
     private var isHere: Bool { venue?.id == store.state.currentVenueID }
@@ -18,11 +18,7 @@ struct TradingPanel: View {
         VStack(spacing: 8) {
             if let venue, isHere {
                 header(venue)
-                quoteRows
-                if let assetID = selectedAssetID,
-                   let price = store.state.assetPrices?[assetID] {
-                    tradeControls(assetID: assetID, price: price)
-                }
+                quoteBoard
             } else if let venue {
                 Text("\(NPCCatalog.profile(id: dealerID)?.name ?? "贩子")在\(venue.name)驻场——先「跑市场」过去才能交易。")
                     .font(.footnote)
@@ -32,6 +28,13 @@ struct TradingPanel: View {
         }
         .padding(12)
         .background(.thinMaterial)
+        .sheet(item: Binding(
+            get: { ticketAssetID.map(TradeTicketID.init) },
+            set: { ticketAssetID = $0?.id }
+        )) { ticket in
+            TradeTicketSheet(store: store, assetID: ticket.id)
+                .presentationDetents([.medium])
+        }
     }
 
     private func header(_ venue: TradeVenue) -> some View {
@@ -47,8 +50,8 @@ struct TradingPanel: View {
         }
     }
 
-    /// 今日报价行：有货的资产（缺货 3 种是常态，原版 leaveout 语义）。
-    private var quoteRows: some View {
+    /// 只读报价板：点一行开交易单（不在这里直接成交，避免误触）。
+    private var quoteBoard: some View {
         VStack(spacing: 4) {
             ForEach(TradeCatalog.assets) { asset in
                 if let price = store.state.assetPrices?[asset.id] {
@@ -60,14 +63,12 @@ struct TradingPanel: View {
 
     private func quoteRow(asset: TradeAsset, price: Int) -> some View {
         let owned = store.state.currentHoldings[asset.id] ?? 0
-        let selected = selectedAssetID == asset.id
         return Button {
-            selectedAssetID = selected ? nil : asset.id
-            quantity = 1
+            ticketAssetID = asset.id
         } label: {
             HStack(spacing: 6) {
                 Text(asset.name)
-                    .font(.footnote.weight(selected ? .semibold : .regular))
+                    .font(.footnote)
                     .foregroundStyle(WA.textPrimary)
                 if asset.isGrey {
                     Text("灰")
@@ -85,59 +86,136 @@ struct TradingPanel: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(WA.textPrimary)
                     .monospacedDigit()
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(WA.textSecondary)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                selected ? WA.accent.opacity(0.12) : WA.bubbleIn.opacity(0.6),
-                in: RoundedRectangle(cornerRadius: 8)
-            )
+            .padding(.vertical, 8)
+            .background(WA.bubbleIn.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
     }
+}
 
-    /// 买卖控制：数量步进 + 全力买入/清仓卖出。
-    private func tradeControls(assetID: String, price: Int) -> some View {
-        let owned = store.state.currentHoldings[assetID] ?? 0
-        let space = store.state.currentCapacity - store.state.usedCapacity
-        let maxBuy = min(space, price > 0 ? store.state.cash / price : 0)
-        return VStack(spacing: 6) {
-            HStack {
-                Stepper("数量 \(quantity)", value: $quantity, in: 1...max(1, max(maxBuy, owned)))
-                    .font(.footnote)
-            }
-            HStack(spacing: 8) {
-                Button("买入 \(quantity) 手（\(price * quantity) 万）") {
-                    store.buy(assetID: assetID, quantity: quantity)
-                    quantity = 1
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(WA.accent)
-                .font(.footnote.weight(.semibold))
-                .disabled(quantity > maxBuy)
+/// sheet(item:) 需要 Identifiable 包装。
+private struct TradeTicketID: Identifiable {
+    let id: String
+}
 
-                Button("卖出 \(min(quantity, owned)) 手") {
-                    store.sell(assetID: assetID, quantity: min(quantity, owned))
-                    quantity = 1
+/// 股票交易式下单单：买/卖分档、数量可调、实时总额、单一确认——防误操作。
+struct TradeTicketSheet: View {
+    @Bindable var store: RainmakerStore
+    let assetID: String
+    @Environment(\.dismiss) private var dismiss
+
+    private enum Side { case buy, sell }
+    @State private var side: Side = .buy
+    @State private var qty = 1
+
+    private var asset: TradeAsset? { TradeCatalog.asset(id: assetID) }
+    private var price: Int { store.state.assetPrices?[assetID] ?? 0 }
+    private var owned: Int { store.state.currentHoldings[assetID] ?? 0 }
+    private var space: Int { store.state.currentCapacity - store.state.usedCapacity }
+    private var maxBuy: Int { price > 0 ? min(space, store.state.cash / price) : 0 }
+    private var maxForSide: Int { side == .buy ? maxBuy : owned }
+    private var total: Int { price * min(qty, max(maxForSide, 0)) }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                priceHeader
+                Picker("方向", selection: $side) {
+                    Text("买入").tag(Side.buy)
+                    Text("卖出").tag(Side.sell)
                 }
-                .buttonStyle(.bordered)
-                .font(.footnote.weight(.semibold))
-                .disabled(owned == 0)
+                .pickerStyle(.segmented)
+                .onChange(of: side) { qty = 1 }
+
+                quantityRow
+                totalRow
+
+                if asset?.isGrey == true, side == .buy {
+                    Label("涉灰资产：卖出会掉信誉，还可能被「查水表」没收。", systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+
+                Spacer(minLength: 0)
+                confirmButton
             }
-            HStack(spacing: 8) {
-                Button("梭哈（\(maxBuy) 手）") {
-                    store.buy(assetID: assetID, quantity: maxBuy)
+            .padding(20)
+            .navigationTitle(asset?.name ?? "交易")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { dismiss() }
                 }
-                .font(.caption)
-                .disabled(maxBuy == 0)
-                Button("清仓（\(owned) 手）") {
-                    store.sell(assetID: assetID, quantity: owned)
-                }
-                .font(.caption)
-                .disabled(owned == 0)
-                Spacer()
             }
         }
+    }
+
+    private var priceHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("现价").font(.caption).foregroundStyle(WA.textSecondary)
+                Text("\(price) 万/手").font(.title3.weight(.bold)).monospacedDigit()
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("现金 \(store.state.cash) 万").font(.caption).foregroundStyle(WA.textSecondary)
+                Text("持仓 \(owned) 手 · 空位 \(space)").font(.caption).foregroundStyle(WA.textSecondary)
+            }
+            .monospacedDigit()
+        }
+    }
+
+    private var quantityRow: some View {
+        HStack(spacing: 12) {
+            Text("数量").font(.subheadline).foregroundStyle(WA.textSecondary)
+            Stepper(value: $qty, in: 1...max(1, maxForSide)) {
+                Text("\(min(qty, max(maxForSide, 0))) 手")
+                    .font(.body.weight(.semibold))
+                    .monospacedDigit()
+            }
+            .disabled(maxForSide < 1)
+            Button(side == .buy ? "可买 \(maxBuy)" : "全部 \(owned)") {
+                qty = max(1, maxForSide)
+            }
+            .font(.caption.weight(.semibold))
+            .buttonStyle(.bordered)
+            .disabled(maxForSide < 1)
+        }
+    }
+
+    private var totalRow: some View {
+        HStack {
+            Text(side == .buy ? "预计花费" : "预计得款")
+                .font(.subheadline).foregroundStyle(WA.textSecondary)
+            Spacer()
+            Text("\(total) 万")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(side == .buy ? .red : WA.accent)
+                .monospacedDigit()
+        }
+    }
+
+    private var confirmButton: some View {
+        let n = min(qty, max(maxForSide, 0))
+        let canTrade = n >= 1
+        return Button {
+            if side == .buy { store.buy(assetID: assetID, quantity: n) }
+            else { store.sell(assetID: assetID, quantity: n) }
+            dismiss()
+        } label: {
+            Text(side == .buy ? "确认买入 \(n) 手 · -\(total) 万" : "确认卖出 \(n) 手 · +\(total) 万")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(side == .buy ? WA.accent : .orange)
+        .disabled(!canTrade)
     }
 }
 

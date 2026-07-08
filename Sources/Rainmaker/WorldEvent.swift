@@ -178,7 +178,7 @@ enum WorldEventScheduler {
             guard granted > 0 else {
                 RainmakerEngine.append(
                     .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                                  text: "可惜!俺的托管账户太小，只能放 \(state.currentCapacity) 手。", at: now),
+                                  text: "可惜!你的托管账户太小，只能放 \(state.currentCapacity) 手。", at: now),
                     to: RainmakerEngine.assistantNPCID, in: &state
                 )
                 return
@@ -204,11 +204,11 @@ enum WorldEventScheduler {
         switch incident.effect {
         case let .healthDamage(points):
             state.health = max(0, state.currentHealth - points)
-            suffix = "俺的健康减少了 \(points) 点。"
+            suffix = "你的健康减少了 \(points) 点。"
         case let .cashLossPercent(percent):
             let loss = state.cash * percent / 100
             state.cash -= loss
-            suffix = "俺损失了 \(loss) 万。"
+            suffix = "你损失了 \(loss) 万。"
         }
         RainmakerEngine.append(
             .systemNotice(id: RainmakerEngine.uuid(using: &rng),

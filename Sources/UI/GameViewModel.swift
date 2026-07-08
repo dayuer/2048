@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 编排：输入 → 引擎 → 按 Beat 时间线两阶段动画 → 存档 → Game Center 提交。
+/// 编排：输入 → 引擎 → 按 Beat 时间线两阶段动画 → 存档。
 @MainActor
 @Observable
 final class GameViewModel {
@@ -17,7 +17,6 @@ final class GameViewModel {
     private(set) var scoreDeltaID = 0
 
     private let storage: GameStorage
-    private let gameCenter: GameCenterManager
     private var isAnimating = false
 
     /// 顿悟钩子：单局内首次合成里程碑数字时回调（沙盘零依赖 Rainmaker，由外壳注入）。
@@ -30,9 +29,8 @@ final class GameViewModel {
     /// 顿悟里程碑数值表。
     static let milestoneValues: Set<Int> = [128, 256, 512, 1024, 2048]
 
-    init(storage: GameStorage = GameStorage(), gameCenter: GameCenterManager) {
+    init(storage: GameStorage = GameStorage()) {
         self.storage = storage
-        self.gameCenter = gameCenter
         let engine = storage.gameState ?? GameEngine(seed: .random(in: .min ... .max))
         self.engine = engine
         self.displayTiles = Self.displayTiles(of: engine)
@@ -93,11 +91,9 @@ final class GameViewModel {
         if engine.score > bestScore {
             bestScore = engine.score
             storage.bestScore = bestScore
-            gameCenter.submitBestScore(bestScore)
         }
         if engine.biggestTile > storage.biggestTile {
             storage.biggestTile = engine.biggestTile
-            gameCenter.submitBiggestTile(engine.biggestTile)
         }
         if engine.isTerminal {
             storage.gameState = nil
@@ -122,9 +118,5 @@ final class GameViewModel {
         engine.continueAfterWin()
         storage.gameState = engine
         overlay = .none
-    }
-
-    func showLeaderboard() {
-        gameCenter.showLeaderboard()
     }
 }

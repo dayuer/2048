@@ -4,8 +4,9 @@ import SwiftUI
 struct ContactsView: View {
     @Bindable var store: RainmakerStore
 
+    /// 与消息页一致：助理 + 债主 + 商界联系人 + 八圈子驻场贩子。
     private var allProfiles: [NPCProfile] {
-        [NPCCatalog.assistant] + NPCCatalog.contacts
+        [NPCCatalog.assistant, NPCCatalog.creditor] + NPCCatalog.contacts + NPCCatalog.dealers
     }
 
     var body: some View {

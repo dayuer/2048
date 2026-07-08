@@ -77,8 +77,8 @@ struct RainmakerThreadView: View {
             TextBubble(text: store.displayText(for: event), at: at, mine: false)
         case let .playerText(_, text, at):
             TextBubble(text: text, at: at, mine: true)
-        case let .systemNotice(_, text, _):
-            SystemNoticePill(text: text)
+        case let .systemNotice(_, text, at):
+            SystemBubble(text: text, at: at)
         case let .dealOffer(_, dealID, _):
             if let deal = store.state.deals.first(where: { $0.id == dealID }) {
                 DealCardBubble(
@@ -198,19 +198,29 @@ private struct ComposerBar: View {
     }
 }
 
-/// 中置系统通知（结算简报/佣金到账）。
-private struct SystemNoticePill: View {
+/// 系统/小何频道消息：以左侧来消息气泡呈现（不再是居中小字），
+/// 承载世界事件 / 每日结算 / 谈判记分 / 复盘报告——统一读作「小何替你盯着」。
+private struct SystemBubble: View {
     let text: String
+    let at: Date
 
     var body: some View {
-        Text(text)
-            .font(.footnote)
-            .foregroundStyle(WA.textSecondary)
-            .multilineTextAlignment(.center)
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(text)
+                    .font(.callout)
+                    .foregroundStyle(WA.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(RainmakerUI.timeLabel(at))
+                    .font(.caption2)
+                    .foregroundStyle(WA.textSecondary)
+            }
             .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(WA.bubbleIn.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
-            .frame(maxWidth: .infinity)
+            .padding(.vertical, 7)
+            .background(WA.bubbleIn)
+            .clipShape(BubbleShape(mine: false))
+            Spacer(minLength: 48)
+        }
     }
 }
 
@@ -234,11 +244,15 @@ private struct DealCardBubble: View {
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(WA.textPrimary)
                 HStack(spacing: 14) {
-                    metric(label: "目标估值", value: "\(deal.valuation) 万")
-                    metric(label: "最高佣金", value: "\(deal.commission) 万")
+                    metric(label: "项目估值", value: "\(deal.valuation) 万")
+                    metric(label: "佣金上限", value: "\(deal.commission) 万")
                     metric(label: "工时", value: "-\(deal.apCost)")
                     metric(label: "押信誉", value: "\(RainmakerBalance.negotiationRepStake)")
                 }
+                Text("估值＝项目规模（决定谈判难度）。佣金按压价深度浮动：击破对方底线拿满上限，见好就收只拿一部分。")
+                    .font(.caption2)
+                    .foregroundStyle(WA.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 actionArea
             }
             .padding(12)
@@ -301,6 +315,11 @@ private struct NegotiationPanel: View {
     @State private var glossaryEntry: GlossaryEntry?
 
     private var session: NegotiationSession? { store.state.activeNegotiation }
+    /// 佣金上限（该项目单的 commission）。
+    private var commissionCap: Int {
+        guard let session = store.state.activeNegotiation else { return 0 }
+        return store.state.deals.first { $0.id == session.dealID }?.commission ?? 0
+    }
 
     var body: some View {
         if let session {
@@ -319,6 +338,18 @@ private struct NegotiationPanel: View {
                     }
                     ProgressView(value: Double(session.defense), total: Double(session.defenseMax))
                         .tint(session.defense <= Int(Double(session.defenseMax) * RainmakerBalance.signUnlockRatio) ? WA.accent : .orange)
+                }
+
+                // 实时佣金读数：把「压价深度→佣金」讲透，消除困惑
+                HStack {
+                    Text("预计到手佣金")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(WA.textSecondary)
+                    Spacer()
+                    Text("\(NegotiationEngine.estimatedPayout(state: store.state) ?? 0) / 上限 \(commissionCap) 万")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(WA.textPrimary)
+                        .monospacedDigit()
                 }
 
                 // 手牌：横滑策略包
@@ -344,7 +375,7 @@ private struct NegotiationPanel: View {
                     store.sign()
                 } label: {
                     Text(NegotiationEngine.canSign(state: store.state)
-                         ? "同意签约 · 预计佣金 \(NegotiationEngine.estimatedPayout(state: store.state) ?? 0) 万"
+                         ? "同意签约 · 拿佣金 \(NegotiationEngine.estimatedPayout(state: store.state) ?? 0) 万（上限 \(commissionCap)）"
                          : "还压不动对方——继续出牌或认栽")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)

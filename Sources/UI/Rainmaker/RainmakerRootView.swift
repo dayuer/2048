@@ -4,7 +4,6 @@ import SwiftUI
 /// RainmakerStore 在此持有，向下注入；破产时全屏覆盖结算页。
 struct RainmakerRootView: View {
     @State private var store = RainmakerStore()
-    @State private var gameCenter = GameCenterManager()
 
     var body: some View {
         TabView {
@@ -21,7 +20,6 @@ struct RainmakerRootView: View {
                 .tabItem { Label("我的", systemImage: "person.crop.circle") }
         }
         .tint(WA.accent)
-        .task { gameCenter.authenticate() }
         .task {
             // 生成式对话接入：Info.plist 配了才接（默认关闭 = 台词池）。
             if store.personaChat == nil {

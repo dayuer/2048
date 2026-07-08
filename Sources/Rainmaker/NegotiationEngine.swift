@@ -230,7 +230,9 @@ enum NegotiationEngine {
         using rng: inout some RandomNumberGenerator, now: Date
     ) {
         guard let index = state.deals.firstIndex(where: { $0.id == session.dealID }) else { return }
-        let amount = payout(for: session, commission: state.deals[index].commission, fullBreak: fullBreak)
+        let commission = state.deals[index].commission
+        let amount = payout(for: session, commission: commission, fullBreak: fullBreak)
+        let remaining = Int(Double(session.defense) / Double(session.defenseMax) * 100)
         state.deals[index].status = .won
         state.cash += amount
         state.reputation += session.repStake + RainmakerBalance.dealReputationReward
@@ -244,8 +246,8 @@ enum NegotiationEngine {
         RainmakerEngine.append(
             .systemNotice(id: RainmakerEngine.uuid(using: &rng),
                           text: fullBreak
-                              ? "完胜：击破对方底线，全额佣金 +\(amount) 万，信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。"
-                              : "签约成交：佣金 +\(amount) 万，信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。",
+                              ? "完胜：击破对方底线，拿满佣金上限 +\(amount) 万，信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。"
+                              : "签约成交：佣金 +\(amount) 万（上限 \(commission)，对方底线还剩 \(remaining)%，故未拿满）。信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。",
                           at: now),
             to: session.npcID, in: &state
         )
