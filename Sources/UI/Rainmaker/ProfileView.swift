@@ -24,10 +24,10 @@ struct ProfileView: View {
                         WAAvatar(systemImage: "briefcase.fill", background: .indigo, size: 56)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(rankTitle)
-                                .font(.system(size: 19, weight: .semibold))
+                                .font(.title3.weight(.semibold))
                                 .foregroundStyle(WA.textPrimary)
                             Text("独立财务顾问 · 实战第 \(store.state.day) 天")
-                                .font(.system(size: 13))
+                                .font(.footnote)
                                 .foregroundStyle(WA.textSecondary)
                         }
                     }

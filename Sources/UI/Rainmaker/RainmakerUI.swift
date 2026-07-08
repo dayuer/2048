@@ -51,7 +51,7 @@ struct WADoubleTick: View {
             Image(systemName: "checkmark")
             Image(systemName: "checkmark")
         }
-        .font(.system(size: 9, weight: .bold))
+        .font(.caption2.weight(.bold))
         .foregroundStyle(Self.readBlue)
     }
 }
@@ -89,14 +89,14 @@ struct ResourceBar: View {
         VStack(spacing: 2) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 11))
+                    .font(.caption2)
                     .foregroundStyle(tint)
                 Text(label)
-                    .font(.system(size: 11))
+                    .font(.caption2)
                     .foregroundStyle(WA.textSecondary)
             }
             Text(value)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(WA.textPrimary)
                 .monospacedDigit()
                 .lineLimit(1)

@@ -73,15 +73,15 @@ struct DiscoverView: View {
                 .frame(width: 36, height: 36)
                 .overlay(
                     Image(systemName: icon)
-                        .font(.system(size: 18))
+                        .font(.title3)
                         .foregroundStyle(.white)
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16))
+                    .font(.callout)
                     .foregroundStyle(WA.textPrimary)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(WA.textSecondary)
             }
         }
@@ -133,10 +133,10 @@ private struct EpiphanyToast: View {
         Button(action: onDismiss) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "lightbulb.max.fill")
-                    .font(.system(size: 22))
+                    .font(.title2)
                     .foregroundStyle(.yellow)
                 Text(reward.summary)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(WA.textPrimary)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -181,27 +181,27 @@ private struct ArchivesView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("绝密档案 · \(entry.year)")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(.red.opacity(0.75))
                 Spacer()
                 Image(systemName: "newspaper")
                     .foregroundStyle(.black.opacity(0.4))
             }
             Text(entry.title)
-                .font(.system(size: 20, weight: .bold, design: .serif))
+                .font(.system(.title3, design: .serif).weight(.bold))
                 .foregroundStyle(.black.opacity(0.85))
             Text(entry.body)
-                .font(.system(size: 14, design: .serif))
+                .font(.system(.subheadline, design: .serif))
                 .foregroundStyle(.black.opacity(0.75))
                 .lineSpacing(4)
             HStack {
                 Text(entry.source)
-                    .font(.system(size: 12, design: .serif))
+                    .font(.system(.caption, design: .serif))
                     .foregroundStyle(.black.opacity(0.5))
                 Spacer()
                 if let cardID = entry.rewardCardID, let card = CardCatalog.card(id: cardID) {
                     Label("已获【\(card.name)】", systemImage: "rectangle.stack.fill")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(WA.accent)
                 }
             }
@@ -217,16 +217,16 @@ private struct ArchivesView: View {
     private func lockedRow(_ entry: ArchiveEntry) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 18))
+                .font(.title3)
                 .foregroundStyle(WA.textSecondary)
                 .frame(width: 36, height: 36)
                 .background(WA.separator.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 2) {
                 Text("？？？")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(WA.textPrimary)
                 Text("在沙盘中合成 \(entry.milestone) 解锁")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(WA.textSecondary)
             }
         }

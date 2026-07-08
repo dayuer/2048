@@ -12,11 +12,11 @@ struct GlossaryView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(entry.term)
-                                    .font(.system(size: 16))
+                                    .font(.callout)
                                     .foregroundStyle(WA.textPrimary)
                                 if !entry.english.isEmpty {
                                     Text(entry.english)
-                                        .font(.system(size: 12))
+                                        .font(.caption)
                                         .foregroundStyle(WA.textSecondary)
                                 }
                             }
@@ -40,15 +40,15 @@ struct GlossaryDetailView: View {
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(entry.term)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.title2.weight(.bold))
                         .foregroundStyle(WA.textPrimary)
                     if !entry.english.isEmpty {
                         Text(entry.english)
-                            .font(.system(size: 15))
+                            .font(.subheadline)
                             .foregroundStyle(WA.textSecondary)
                     }
                     Text(entry.category.rawValue)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.caption2.weight(.medium))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(WA.accent.opacity(0.15), in: Capsule())
@@ -59,13 +59,13 @@ struct GlossaryDetailView: View {
 
             Section("释义") {
                 Text(entry.definition)
-                    .font(.system(size: 16))
+                    .font(.callout)
                     .lineSpacing(4)
             }
 
             Section("出处") {
                 Label(entry.source, systemImage: "book.closed")
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundStyle(WA.textSecondary)
             }
 
@@ -78,9 +78,9 @@ struct GlossaryDetailView: View {
                                     .foregroundStyle(WA.accent)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(card.name)
-                                        .font(.system(size: 15, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                     Text("筹码 \(card.chips) × 倍率 \(String(format: "%.1f", card.mult))")
-                                        .font(.system(size: 12))
+                                        .font(.caption)
                                         .foregroundStyle(WA.textSecondary)
                                         .monospacedDigit()
                                 }

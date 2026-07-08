@@ -57,7 +57,7 @@ struct RainmakerThreadView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Label("\(store.state.ap)", systemImage: "bolt.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(store.state.ap > 0 ? .yellow : .gray)
                     .labelStyle(.titleAndIcon)
             }
@@ -99,11 +99,11 @@ private struct TextBubble: View {
             if mine { Spacer(minLength: 48) }
             VStack(alignment: .trailing, spacing: 2) {
                 Text(text)
-                    .font(.system(size: 16))
+                    .font(.callout)
                     .foregroundStyle(WA.textPrimary)
                 HStack(spacing: 3) {
                     Text(RainmakerUI.timeLabel(at))
-                        .font(.system(size: 11))
+                        .font(.caption2)
                         .foregroundStyle(WA.textSecondary)
                     if mine {
                         WADoubleTick()
@@ -160,12 +160,12 @@ private struct ComposerBar: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "plus")
-                .font(.system(size: 20))
+                .font(.title3)
                 .foregroundStyle(WA.textSecondary)
                 .frame(width: 32, height: 32)
 
             TextField("消息", text: $text, axis: .vertical)
-                .font(.system(size: 16))
+                .font(.callout)
                 .lineLimit(1...4)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
@@ -181,7 +181,7 @@ private struct ComposerBar: View {
                 onSend(message)
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 30))
+                    .font(.title)
                     .foregroundStyle(canSend ? WA.accent : WA.textSecondary.opacity(0.5))
             }
             .disabled(!canSend)
@@ -198,7 +198,7 @@ private struct SystemNoticePill: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13))
+            .font(.footnote)
             .foregroundStyle(WA.textSecondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 12)
@@ -221,11 +221,11 @@ private struct DealCardBubble: View {
                     Image(systemName: "doc.text.fill")
                         .foregroundStyle(WA.accent)
                     Text("商业计划书")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(WA.textSecondary)
                 }
                 Text(deal.title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(WA.textPrimary)
                 HStack(spacing: 14) {
                     metric(label: "目标估值", value: "\(deal.valuation) 万")
@@ -246,10 +246,10 @@ private struct DealCardBubble: View {
     private func metric(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 11))
+                .font(.caption2)
                 .foregroundStyle(WA.textSecondary)
             Text(value)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(WA.textPrimary)
                 .monospacedDigit()
         }
@@ -261,7 +261,7 @@ private struct DealCardBubble: View {
         case .offered:
             Button(action: onStart) {
                 Text(canStart ? "开始尽调谈判" : "工时/信誉不足或另有谈判")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
@@ -281,7 +281,7 @@ private struct DealCardBubble: View {
 
     private func statusLabel(_ text: String, icon: String, tint: Color) -> some View {
         Label(text, systemImage: icon)
-            .font(.system(size: 13, weight: .medium))
+            .font(.footnote.weight(.medium))
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
@@ -303,11 +303,11 @@ private struct NegotiationPanel: View {
                 VStack(spacing: 4) {
                     HStack {
                         Text("对方底线估值")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.caption.weight(.medium))
                             .foregroundStyle(WA.textSecondary)
                         Spacer()
                         Text("\(session.defense) / \(session.defenseMax)")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(WA.textPrimary)
                             .monospacedDigit()
                     }
@@ -340,7 +340,7 @@ private struct NegotiationPanel: View {
                     Text(NegotiationEngine.canSign(state: store.state)
                          ? "同意签约 · 预计佣金 \(NegotiationEngine.estimatedPayout(state: store.state) ?? 0) 万"
                          : "还压不动对方——继续出牌或认栽")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                 }
@@ -366,29 +366,29 @@ private struct StrategyCardFace: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
                 Text(card.name)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(WA.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Button(action: onInfo) {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(WA.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
             HStack(spacing: 4) {
                 Text("\(card.chips)")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(.blue)
                 Text("× \(String(format: "%.1f", card.mult))")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(.red)
             }
             .monospacedDigit()
             if let effect = card.effect {
                 Text(effect == .vamHighRisk ? "⚠️ 高危" : "🛡 保本")
-                    .font(.system(size: 10))
+                    .font(.caption2)
             }
         }
         .padding(.horizontal, 10)

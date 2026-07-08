@@ -47,7 +47,7 @@ extension UIColor {
 struct WAPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 17, weight: .semibold))
+            .font(.body.weight(.semibold))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -62,7 +62,7 @@ struct WAPrimaryButtonStyle: ButtonStyle {
 struct WATextButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 17))
+            .font(.body)
             .foregroundStyle(WA.accent)
             .opacity(configuration.isPressed ? 0.5 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)

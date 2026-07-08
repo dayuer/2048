@@ -59,7 +59,7 @@ struct MessagesView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(WA.textPrimary)
                             .frame(width: 34, height: 34)
                             .background(WA.separator.opacity(0.6), in: Circle())
@@ -70,7 +70,7 @@ struct MessagesView: View {
                         showNewChat = true
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
                             .frame(width: 34, height: 34)
                             .background(WA.accent, in: Circle())
@@ -111,7 +111,7 @@ struct MessagesView: View {
                         filter = item
                     } label: {
                         Text(item.rawValue)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundStyle(filter == item ? WA.accent : WA.textSecondary)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 7)
@@ -148,19 +148,19 @@ private struct ThreadRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
                     Text(profile?.name ?? npcID)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(WA.textPrimary)
                     Spacer()
                     if let last = lastVisible {
                         Text(RainmakerUI.listTimeLabel(last.at))
-                            .font(.system(size: 13))
+                            .font(.footnote)
                             .foregroundStyle(unread > 0 ? WA.accent : WA.textSecondary)
                     }
                 }
                 HStack(spacing: 4) {
                     if isTyping {
                         Text("正在输入…")
-                            .font(.system(size: 15))
+                            .font(.subheadline)
                             .foregroundStyle(WA.accent)
                             .lineLimit(1)
                     } else if let last = lastVisible {
@@ -168,14 +168,14 @@ private struct ThreadRow: View {
                             WADoubleTick()
                         }
                         Text(RainmakerUI.preview(for: last, in: store.state))
-                            .font(.system(size: 15))
+                            .font(.subheadline)
                             .foregroundStyle(WA.textSecondary)
                             .lineLimit(1)
                     }
                     Spacer()
                     if unread > 0 {
                         Text("\(unread)")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 2)
@@ -210,10 +210,10 @@ private struct NewChatSheet: View {
                         )
                         VStack(alignment: .leading, spacing: 2) {
                             Text(profile.name)
-                                .font(.system(size: 17))
+                                .font(.body)
                                 .foregroundStyle(WA.textPrimary)
                             Text(profile.role)
-                                .font(.system(size: 13))
+                                .font(.footnote)
                                 .foregroundStyle(WA.textSecondary)
                         }
                     }

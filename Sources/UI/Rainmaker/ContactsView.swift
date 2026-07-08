@@ -22,10 +22,10 @@ struct ContactsView: View {
                         )
                         VStack(alignment: .leading, spacing: 2) {
                             Text(profile.name)
-                                .font(.system(size: 17))
+                                .font(.body)
                                 .foregroundStyle(WA.textPrimary)
                             Text(profile.role)
-                                .font(.system(size: 13))
+                                .font(.footnote)
                                 .foregroundStyle(WA.textSecondary)
                         }
                     }
