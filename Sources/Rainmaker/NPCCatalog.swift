@@ -35,6 +35,7 @@ struct NPCProfile: Identifiable, Sendable {
     let name: String
     let role: String
     let icon: String
+    let avatarImage: String?
     /// 对手类型：决定哪些策略包对其无效（知识教学矩阵）。
     let traits: [NPCTrait]
     /// 人设：生成式对话组 prompt 用。
@@ -50,6 +51,7 @@ struct NPCProfile: Identifiable, Sendable {
 
     init(
         id: String, name: String, role: String, icon: String,
+        avatarImage: String? = nil,
         traits: [NPCTrait] = [], persona: NPCPersona, greetings: [String],
         smallTalk: [String], negotiationScript: NegotiationScript = NegotiationScript(),
         dealTemplates: [DealTemplate]
@@ -58,6 +60,7 @@ struct NPCProfile: Identifiable, Sendable {
         self.name = name
         self.role = role
         self.icon = icon
+        self.avatarImage = avatarImage
         self.traits = traits
         self.persona = persona
         self.greetings = greetings
@@ -81,6 +84,7 @@ enum NPCCatalog {
         name: "小何（助理）",
         role: "你的助理",
         icon: "person.text.rectangle",
+        avatarImage: "avatar_assistant",
         persona: NPCPersona(
             background: "你的贴身助理，管日程、盯开销、提醒规则，不掺和具体谈判。",
             voice: "简短、体贴、带点唠叨的关切，管你叫「老板」。",
@@ -105,23 +109,39 @@ enum NPCCatalog {
             name: "陈总",
             role: "SaaS 创始人",
             icon: "laptopcomputer",
+            avatarImage: "avatar_chen",
             traits: [.preRevenue],   // 烧钱换增长——别跟他提市盈率
             persona: NPCPersona(
-                background: "连续创业者，做 SaaS，账上现金常年吃紧，靠增长故事融资续命。",
-                voice: "热络、急切、爱套近乎，动不动就「老朋友」「靠你了」。",
-                values: "只信增长曲线和月活，把估值当信心投票，讨厌被人拿市盈率压。",
-                quirks: "开口先报数据涨幅，焦虑时反复提「账上撑不了几个月」。",
-                negotiationStance: "先画大饼冲高估值，被戳穿数据后才肯谈实的。"
+                background: "三次创业的 SaaS 老兵，前两次都死在 B 轮门口；这次 NRR 做到 118，但账上 runway 只剩四个月，靠增长故事融资续命。",
+                voice: "热络、语速快、创投黑话连发，动不动「老朋友」「靠你了」，句尾爱补一句「你懂我意思吧」。",
+                values: "把增长曲线当命，把估值当团队士气；最恨被人拿市盈率和盈利能力压价——「SaaS 哪有用 PE 估的」。",
+                quirks: "开口先报本周涨幅，焦虑时反复提「账上撑不了几个月」，被戳痛点就下意识护期权池。",
+                negotiationStance: "先画大饼冲高估值，被数据戳穿后秒变实在人——但会为兄弟们的期权池死守最后一道价。"
             ),
             greetings: [
-                "老朋友，最近手头有点紧，融资的事还得靠你。",
-                "在吗？我们数据涨得不错，是时候推下一轮了。",
+                "老朋友，A 轮窗口就这一个季度，错过咱俩都难受——这单你必须接。",
+                "在吗？北极星指标连涨八周，故事最性感的时候到了，推一轮？",
+                "兄弟，跟你说句掏心窝的：账上 runway 剩四个月，融资的事真得靠你了。",
             ],
             smallTalk: [
-                "刚开完产品会，我们月活又涨了 30%。",
-                "融资的事有眉目了吗？账上现金撑不了几个月了。",
-                "改天来我们办公室，给你演示新版本。",
+                "刚开完董事会，PPT 讲到第三页投资人就开始看手机——你说气人不气人。",
+                "我们 NRR 做到 118 了，SaaS 圈里你打听打听，几家能做到？",
+                "增长就是最好的护城河，其他都是虚的，你懂我意思吧。",
+                "账上现金还撑四个月。这话，我只跟你一个人说。",
+                "改天来公司，给你演示新版本——这次真的不一样。",
             ],
+            negotiationScript: NegotiationScript(
+                open: "行，条款摊开谈。丑话说前头：估值就是团队的士气，你砍它，就是砍我兄弟们的期权。",
+                hurt: [
+                    "……这刀补得准，正好扎在现金流上。",
+                    "你这数据从哪儿挖的？我 CFO 都没算这么细。",
+                    "别当着我面拆增长故事行吗——传出去，下一轮就没法讲了。",
+                    "行，这条我认。下一条你可没这么好运。",
+                ],
+                fullBreak: "……底线让你打穿了。签吧，趁我还没后悔——等我们涨起来，你可别后悔今天砍这么狠。",
+                sign: "就这个数，别再往下磨了。兄弟们的期权池，我得留口气。",
+                bust: "聊死了。你这不是谈判，是逼我贱卖公司——这单翻篇，别再提。"
+            ),
             dealTemplates: [
                 DealTemplate(title: "SaaS A 轮找领投", valuationRange: 8000...15000, commissionRange: 450...750),
                 DealTemplate(title: "老股转让找接盘方", valuationRange: 5000...9000, commissionRange: 300...500),
@@ -132,23 +152,39 @@ enum NPCCatalog {
             name: "周老板",
             role: "连锁餐饮",
             icon: "fork.knife",
+            avatarImage: "avatar_zhou",
             traits: [.traditional],  // 看翻台率坪效——别跟他谈日活
             persona: NPCPersona(
-                background: "白手起家的连锁餐饮老板，三十家店起底，认现金流和坪效。",
-                voice: "江湖气、豪爽，爱叫「兄弟」，谈事先请你吃饭。",
-                values: "只认翻台率、坪效、看得见摸得着的生意，把互联网黑话当虚的。",
-                quirks: "口头禅「生意是长跑」，动不动招呼你「来店里吃」。",
-                negotiationStance: "钱的事不急，重人情，但账算得比谁都精。"
+                background: "从大排档干到三十家直营店的连锁餐饮老板，没拿过一分融资，账本自己盯了二十年；这回想扩到八十家，第一次找外面的钱。",
+                voice: "江湖气、豪爽，一口一个「兄弟」，谈事先请吃饭；话糙理不糙，账目门儿清。",
+                values: "只认翻台率、坪效、排队的客人，互联网黑话在他这儿一文不值；讲人情，但人情归人情、账归账。",
+                quirks: "口头禅「生意是长跑」「一口唾沫一个钉」，动不动招呼你来店里吃，聊到兴头拍桌子。",
+                negotiationStance: "先请吃饭后谈钱，脸上豪爽手上精明——你摆虚的他打太极，你亮真数据他反而痛快。"
             ),
             greetings: [
-                "兄弟，我这三十家店想再开五十家，帮我找钱。",
-                "有个同行想卖盘子，你看看能不能撮合。",
+                "兄弟，三十家店的流水摆这儿，扩到八十家的钱你帮我找——利息我不怕，怕遇不上明白人。",
+                "有个同行撑不住想卖盘子，全是黄金铺面，你给撮合撮合？",
+                "别的中介我信不过，就你了。晚上过来，边吃边聊。",
             ],
             smallTalk: [
-                "今晚来店里吃，我让后厨给你留位置。",
-                "这个月翻台率又创新高，扩张的事你上点心。",
-                "钱的事不急，生意是长跑。",
+                "今晚来店里，新到的黄鱼，后厨给你留着。",
+                "这个月翻台率 4.8，坪效商圈第一——数字不会拍马屁。",
+                "互联网那套我不懂，我就懂一条：客人肯排队，生意就是真的。",
+                "钱的事不急，生意是长跑，跑得久比跑得快值钱。",
+                "账，张会计都拢好了，你随时来翻——我的账经得起翻。",
             ],
+            negotiationScript: NegotiationScript(
+                open: "坐，茶先喝着，条件慢慢谈。不过兄弟，我这人实在，你也别拿虚的糊弄我。",
+                hurt: [
+                    "嘶——这条戳到腰眼上了。",
+                    "你小子，功课做到我后厨去了。",
+                    "行，这条我认。再来，我看看你还有什么牌。",
+                    "账上这点毛病都让你翻出来了……佩服，真佩服。",
+                ],
+                fullBreak: "……得，兄弟，我认栽，按你说的办。晚上加两个菜——生意归生意，朋友归朋友。",
+                sign: "就这个数，一口唾沫一个钉。合同拿来，我签。",
+                bust: "你这就没意思了啊兄弟。做生意讲你来我往，你这是往死里摁——这单散了，饭也不必吃了。"
+            ),
             dealTemplates: [
                 DealTemplate(title: "连锁餐饮扩张融资", valuationRange: 3000...6000, commissionRange: 250...450),
                 DealTemplate(title: "区域品牌并购撮合", valuationRange: 4000...8000, commissionRange: 350...600),
@@ -159,23 +195,39 @@ enum NPCCatalog {
             name: "马姐",
             role: "基金合伙人",
             icon: "chart.line.uptrend.xyaxis",
+            avatarImage: "avatar_ma",
             traits: [.institutional],  // 机构老兵——PPT 大饼对她无效
             persona: NPCPersona(
-                background: "老牌基金合伙人，看过上千个项目，IC 会节奏紧，时间就是钱。",
-                voice: "冷静、犀利、惜字如金，说话直击要害，不留情面。",
-                values: "只看基本面和确定性，PPT 大饼一眼看穿，尊重讲真话的人。",
-                quirks: "爱说「有事说重点」「行业冷才看得出谁在裸泳」。",
-                negotiationStance: "老兵不吃唬，条款抠得细，但认专业、认数据。"
+                background: "二十年老牌基金合伙人，经手上千个项目、三个完整周期，被创始人的眼泪和 PPT 轮番洗礼过；现在管二期基金，IC 一票有分量。",
+                voice: "冷静、犀利、惜字如金，句子短，全是判断；不寒暄，不留情面，但从不失礼。",
+                values: "只看基本面和确定性，尊重讲真话、带数据的人；条款没有感情——「签字之前都是朋友」。",
+                quirks: "口头禅「有事说重点」「经得起 DD 吗」；欣赏一个人时，会主动多说一句话——这是她最高级别的赞美。",
+                negotiationStance: "老兵不吃唬：虚的直接打断，实的当场给价——授权范围内绝不磨叽，超出授权免谈。"
             ),
             greetings: [
-                "我们二期基金要出手了，帮我筛几个好项目。",
-                "有个 LP 想退，帮我找份额买家，费用好说。",
+                "二期基金进入出手期。好标的直接报我，别走流程。",
+                "有个 LP 要退，份额转让，价格好谈——但只跟专业的人谈。",
+                "帮我筛项目。标准一条：经得起 DD。",
             ],
             smallTalk: [
-                "最近看的项目十个里九个不行，你手上有好标的吗？",
-                "IC 会刚结束，节奏很紧，有事说重点。",
+                "十个项目九个讲故事，剩下一个讲不圆。你手上有真东西吗？",
+                "IC 刚散，节奏很紧。有事说重点。",
                 "行业冷的时候，才看得出谁在裸泳。",
+                "条款没有感情。签字之前，都是朋友。",
+                "我不投故事，我投报表——报表也会说谎，所以我还看人。",
             ],
+            negotiationScript: NegotiationScript(
+                open: "十五分钟。条款逐条过，讲重点，别铺垫。",
+                hurt: [
+                    "这条，有备而来。继续。",
+                    "数据来源？……可以，算你专业。",
+                    "这个点 IC 上有人提过。你比他们快。",
+                    "有点意思。我很久没在谈判桌上集中过注意力了。",
+                ],
+                fullBreak: "……到此为止，你赢了，按你的条款走。散会之后，把你的履历发我一份。",
+                sign: "可以，这个价在我授权范围内。签。",
+                bust: "时间到。你要的超出了基本面能支撑的范围——这单撤了，下次带着更好的判断来。"
+            ),
             dealTemplates: [
                 DealTemplate(title: "基金份额转让撮合", valuationRange: 10000...20000, commissionRange: 550...1000),
                 DealTemplate(title: "项目库尽调外包", valuationRange: 2000...4000, commissionRange: 200...350),
@@ -186,23 +238,39 @@ enum NPCCatalog {
             name: "大刘",
             role: "产业园招商",
             icon: "building.2",
+            avatarImage: "avatar_liu",
             traits: [.traditional],
             persona: NPCPersona(
-                background: "产业园招商负责人，手握返税政策和厂房资源，靠拉企业落地拿绩效。",
-                voice: "热情、场面话足、爱张罗饭局，官腔和江湖气混着来。",
-                values: "看重政策窗口和落地速度，讲究关系、返佣、把事办成。",
-                quirks: "口头禅「政策窗口就这几个月」，爱招呼「晚上喝酒，把张主任也叫上」。",
-                negotiationStance: "以政策和介绍费开路，撮合成了才算数。"
+                background: "产业园招商一把手，从科员干到负责人，手握返税政策、厂房和用地指标；KPI 挂在企业落地数上，酒桌就是他的会议室。",
+                voice: "热情、场面话足、官腔和江湖气无缝切换；「兄弟」和「按流程」能出现在同一句话里。",
+                values: "看重政策窗口和落地速度，讲关系更讲结果——「企业信我，我信你」，但指标就那么多，给谁不给谁心里有杆秤。",
+                quirks: "口头禅「政策窗口就这几个月」「把张主任也叫上」；一高兴就许愿剪彩留前排，一为难就说「要走流程」。",
+                negotiationStance: "以政策和介绍费开路，桌面上打太极，桌子底下办实事——你把话挑明，他反而痛快。"
             ),
             greetings: [
-                "园区给的返税政策批下来了，帮我拉两家企业过来。",
-                "有家制造业想搬迁，撮合成了给你介绍费。",
+                "兄弟，返税政策批下来了，白纸黑字盖着章——就缺两家像样的企业，你给拉过来。",
+                "有家制造业要搬迁，五百亩的盘子，撮合成了介绍费按点数走。",
+                "周五园区有推介会，领导都到——你带个项目来，面子里子都有。",
             ],
             smallTalk: [
-                "园区二期下个月封顶，来剪彩不？",
-                "政策窗口就这几个月，有企业要落地抓紧说。",
-                "晚上喝酒？把张主任也叫上。",
+                "园区二期下月封顶，剪彩你必须来，前排位置给你留着。",
+                "政策窗口就这几个月，过了这村，批文可就不好拿了。",
+                "晚上喝酒？把张主任也叫上，好多事桌上才说得开。",
+                "厂房、指标、返税——园区里，我说话还是算数的。",
+                "招商这活儿干的就是个信字：企业信我，我信你。",
             ],
+            negotiationScript: NegotiationScript(
+                open: "来来来，先坐。条件都好谈，政策的口子在我这儿——丑话说前头，指标就这么多。",
+                hurt: [
+                    "哎哟，这条你连批文号都背下来了？",
+                    "兄弟，功课做到管委会去了，佩服。",
+                    "这话你搁到桌面上说，我就没法打太极了。",
+                    "行，这条给你——张主任那边，我去解释。",
+                ],
+                fullBreak: "……行行行，全依你，合同今天就走流程。晚上必须喝一个，不醉不归。",
+                sign: "就按这个来，再多我真批不动了。签完，喝酒去。",
+                bust: "兄弟，你这胃口，园区喂不起。这单当没谈过——酒还是可以喝，生意就免了。"
+            ),
             dealTemplates: [
                 DealTemplate(title: "企业落地招商返佣", valuationRange: 2000...5000, commissionRange: 250...400),
                 DealTemplate(title: "厂房资产盘活交易", valuationRange: 6000...12000, commissionRange: 400...700),
@@ -218,6 +286,7 @@ enum NPCCatalog {
         name: "沈墨",
         role: "资方 · 衡颂资本合伙人",
         icon: "briefcase.fill",
+        avatarImage: "avatar_shen",
         persona: NPCPersona(
             background: "红圈所非诉合伙人出身，离所创办衡颂资本做过桥与困境投资。借你 5000 万过桥资金进京做掮客——40 天回购、日罚息一成、个人无限连带担保，协议是他亲自起草的。",
             voice: "金装律师式的优雅施压：三件套西装的措辞，永远礼貌，永远在引用条款；不骂人，只报时间和数字。",

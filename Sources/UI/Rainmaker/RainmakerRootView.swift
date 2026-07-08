@@ -4,6 +4,7 @@ import SwiftUI
 /// RainmakerStore 在此持有，向下注入；破产时全屏覆盖结算页。
 struct RainmakerRootView: View {
     @State private var store = RainmakerStore()
+    @State private var llmSettings = LLMSettingsStore()
     @State private var showNoticeCenter = false
 
     var body: some View {
@@ -17,15 +18,16 @@ struct RainmakerRootView: View {
             DiscoverView(store: store)
                 .tabItem { Label("发现", systemImage: "safari.fill") }
 
-            ProfileView(store: store)
+            ProfileView(store: store, llmSettings: llmSettings)
                 .tabItem { Label("我的", systemImage: "person.crop.circle") }
         }
         .tint(WA.accent)
         .task {
-            // 生成式对话接入：Info.plist 配了才接（默认关闭 = 台词池）。
-            if store.personaChat == nil {
-                store.personaChat = PersonaChatConfig.fromInfoPlist().makeClient()
-            }
+            applyChatClient()
+        }
+        // 设置页任何改动（增删改/切换激活）即时生效，无需重启
+        .onChange(of: llmSettings.revision) { _, _ in
+            applyChatClient()
         }
         .overlay {
             if store.state.isGameOver {
@@ -43,6 +45,12 @@ struct RainmakerRootView: View {
                 NoticeCenterView(store: store)
             }
         }
+    }
+
+    /// 生成式对话接入优先级：设置页直连 LLM > Info.plist 后台（第二步）> 台词池。
+    private func applyChatClient() {
+        store.personaChat = llmSettings.makeClient()
+            ?? PersonaChatConfig.fromInfoPlist().makeClient()
     }
 }
 

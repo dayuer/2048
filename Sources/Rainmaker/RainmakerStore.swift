@@ -37,6 +37,14 @@ final class RainmakerStore {
     /// 该线程可增强的最近 N 轮历史（喂给生成式做记忆连续）。
     private let historyWindow = 8
 
+    /// 谈判台词的场景标签（显示层，不持久化）：出牌结果在包装层零成本打标，
+    /// 生成式据此选对提示词板块。重启后标签消失无妨——旧局台词启动即标已送达，不会重新生成。
+    struct NegotiationSceneTag {
+        let intent: PersonaChatRequest.Intent
+        let context: PersonaChatRequest.NegotiationContext
+    }
+    private(set) var negotiationSceneTags: [UUID: NegotiationSceneTag] = [:]
+
     init(fileURL: URL = RainmakerStore.defaultFileURL) {
         self.fileURL = fileURL
         if let data = try? Data(contentsOf: fileURL),
@@ -66,23 +74,93 @@ final class RainmakerStore {
 
     @discardableResult
     func startNegotiation(dealID: UUID) -> Bool {
+        let deal = state.deals.first { $0.id == dealID }
+        let baseline = eventCount(npcID: deal?.npcID)
         let started = NegotiationEngine.start(dealID: dealID, state: &state, using: &rng, now: .now)
-        if started { commit() }
+        if started {
+            if let deal {
+                tagNegotiationLines(
+                    npcID: deal.npcID, after: baseline, intents: [.negotiationOpen],
+                    context: .init(dealTitle: deal.title, cardName: nil, cardKnowledge: nil,
+                                   damage: nil, defenseRemainingPercent: 100)
+                )
+            }
+            commit()
+        }
         return started
     }
 
     @discardableResult
     func play(cardID: String) -> NegotiationEngine.PlayOutcome? {
+        let session = state.activeNegotiation
+        let card = CardCatalog.card(id: cardID)
+        let dealTitle = state.deals.first { $0.id == session?.dealID }?.title
+        let baseline = eventCount(npcID: session?.npcID)
         let outcome = NegotiationEngine.play(cardID: cardID, state: &state, using: &rng, now: .now)
-        if outcome != nil { commit() }
+        if let outcome {
+            if let session, let card {
+                // 场景序列与引擎追加顺序一一对应：受痛/嘲讽在前，终局台词（击穿/谈崩）随后。
+                var intents: [PersonaChatRequest.Intent] = [outcome.invalid ? .negotiationTaunt : .negotiationHurt]
+                if outcome.broke { intents.append(.negotiationBreak) }
+                if outcome.busted { intents.append(.negotiationBust) }
+                let remaining = max(0, session.defense - outcome.damage)
+                tagNegotiationLines(
+                    npcID: session.npcID, after: baseline, intents: intents,
+                    context: .init(
+                        dealTitle: dealTitle ?? "这单生意",
+                        cardName: card.name,
+                        cardKnowledge: outcome.invalid ? card.knowledge : nil,
+                        damage: outcome.invalid ? nil : outcome.damage,
+                        defenseRemainingPercent: Int(Double(remaining) / Double(session.defenseMax) * 100)
+                    )
+                )
+            }
+            commit()
+        }
         return outcome
     }
 
     @discardableResult
     func sign() -> Int? {
+        let session = state.activeNegotiation
+        let dealTitle = state.deals.first { $0.id == session?.dealID }?.title
+        let baseline = eventCount(npcID: session?.npcID)
         let payout = NegotiationEngine.sign(state: &state, using: &rng, now: .now)
-        if payout != nil { commit() }
+        if payout != nil {
+            if let session {
+                tagNegotiationLines(
+                    npcID: session.npcID, after: baseline, intents: [.negotiationSign],
+                    context: .init(
+                        dealTitle: dealTitle ?? "这单生意",
+                        cardName: nil, cardKnowledge: nil, damage: nil,
+                        defenseRemainingPercent: Int(Double(session.defense) / Double(session.defenseMax) * 100)
+                    )
+                )
+            }
+            commit()
+        }
         return payout
+    }
+
+    private func eventCount(npcID: String?) -> Int {
+        guard let npcID else { return 0 }
+        return state.threads.first { $0.id == npcID }?.events.count ?? 0
+    }
+
+    /// 引擎调用后给新增的 npcText 逐条打场景标签（按追加顺序与 intents 对齐）。
+    private func tagNegotiationLines(
+        npcID: String, after baseline: Int,
+        intents: [PersonaChatRequest.Intent],
+        context: PersonaChatRequest.NegotiationContext
+    ) {
+        guard let events = state.threads.first(where: { $0.id == npcID })?.events,
+              baseline < events.count else { return }
+        let newNPCTextIDs: [UUID] = events[baseline...].compactMap {
+            if case let .npcText(id, _, _) = $0 { id } else { nil }
+        }
+        for (id, intent) in zip(newNPCTextIDs, intents) {
+            negotiationSceneTags[id] = NegotiationSceneTag(intent: intent, context: context)
+        }
     }
 
     func sendMessage(_ text: String, to npcID: String) {
@@ -190,6 +268,7 @@ final class RainmakerStore {
         typingNPCIDs = []
         revealedCounts = [:]
         generatedText = [:]
+        negotiationSceneTags = [:]
         activeBanner = nil
         bannerBaseline = 0
         state = RainmakerEngine.newRun(using: &rng, now: .now)
@@ -358,19 +437,24 @@ final class RainmakerStore {
         }
     }
 
-    /// 为第 index 条联系人 npcText 组请求：意图由邻居推断，历史取最近 N 轮。
+    /// 为第 index 条联系人 npcText 组请求：谈判台词按场景标签直取，
+    /// 其余意图由邻居推断，历史取最近 N 轮。
     /// 返回 nil 表示不增强（assistant 线程 / 非 npcText / 越界）。
     private func personaChatRequest(npcID: String, index: Int) -> PersonaChatRequest? {
         guard npcID != RainmakerEngine.assistantNPCID,
               let profile = NPCCatalog.profile(id: npcID),
               let events = state.threads.first(where: { $0.id == npcID })?.events,
               index < events.count,
-              case .npcText = events[index] else { return nil }
+              case let .npcText(eventID, _, _) = events[index] else { return nil }
 
         let intent: PersonaChatRequest.Intent
         var playerMessage: String?
         var deal: PersonaChatRequest.DealContext?
-        if index > 0, case let .playerText(_, text, _) = events[index - 1] {
+        var negotiation: PersonaChatRequest.NegotiationContext?
+        if let tag = negotiationSceneTags[eventID] {
+            intent = tag.intent
+            negotiation = tag.context
+        } else if index > 0, case let .playerText(_, text, _) = events[index - 1] {
             intent = .reply
             playerMessage = text
         } else if index + 1 < events.count, case let .dealOffer(_, dealID, _) = events[index + 1] {
@@ -398,7 +482,8 @@ final class RainmakerStore {
             history: Array(priorTurns.suffix(historyWindow)),
             intent: intent,
             deal: deal,
-            playerMessage: playerMessage
+            playerMessage: playerMessage,
+            negotiation: negotiation
         )
     }
 

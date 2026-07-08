@@ -92,6 +92,8 @@ struct RainmakerThreadView: View {
                 .presentationDetents([.large])
         }
         .navigationBarTitleDisplayMode(.inline)
+        // 进聊天即全屏沉浸：藏掉底部四 tab 栏（WhatsApp/微信同款），返回列表页自动恢复
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             // WhatsApp 导航头：头像 + 名字 + 在线状态副标题
             ToolbarItem(placement: .principal) {
@@ -285,19 +287,19 @@ private struct ComposerBar: View {
 
             // 圆角输入框，右侧内嵌贴纸按钮（WhatsApp 形态）
             HStack(spacing: 6) {
-                TextField("", text: $text, axis: .vertical)
+                TextField("发消息…", text: $text, axis: .vertical)
                     .font(.callout)
                     .lineLimit(1...4)
                 Image(systemName: "face.smiling")
                     .font(.body)
                     .foregroundStyle(WA.textSecondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(WA.bubbleIn, in: RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(WA.bubbleIn, in: RoundedRectangle(cornerRadius: 20))
             .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(WA.separator, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(WA.accent.opacity(0.35), lineWidth: 1.5)
             )
 
             if isEmpty {
@@ -325,6 +327,12 @@ private struct ComposerBar: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(.thinMaterial)
+        // 顶部发丝分隔线：把输入区从聊天画布里明确划出来
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(WA.separator)
+                .frame(height: 0.5)
+        }
         .animation(.easeOut(duration: 0.15), value: isEmpty)
     }
 }

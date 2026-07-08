@@ -81,7 +81,9 @@ enum NegotiationEngine {
         )
         RainmakerEngine.append(
             .npcText(id: RainmakerEngine.uuid(using: &rng),
-                     text: "可以谈，但我的底线在那儿摆着。", at: now),
+                     text: NPCCatalog.profile(id: deal.npcID)?.negotiationScript.open
+                         ?? "可以谈，但我的底线在那儿摆着。",
+                     at: now),
             to: deal.npcID, in: &state
         )
         RainmakerEngine.notify(
@@ -93,6 +95,7 @@ enum NegotiationEngine {
 
     // MARK: - 出牌
 
+    /// 共享受痛池：NPC 未配置 negotiationScript.hurt 时的回退。
     private static let hurtLines = [
         "……这个数字有点扎心。",
         "你是做过功课的，行。",
@@ -150,9 +153,10 @@ enum NegotiationEngine {
             "【\(card.name)】命中：\(card.chips) × \(String(format: "%.1f", card.mult)) = \(damage)，底线 \(before) → \(session.defense)。",
             in: &state, using: &rng, at: now
         )
+        let hurtPool = npc.negotiationScript.hurt.isEmpty ? hurtLines : npc.negotiationScript.hurt
         RainmakerEngine.append(
             .npcText(id: RainmakerEngine.uuid(using: &rng),
-                     text: hurtLines.randomElement(using: &rng)!, at: now),
+                     text: hurtPool.randomElement(using: &rng)!, at: now),
             to: session.npcID, in: &state
         )
         return finishPlayStep(session: &session, state: &state, damage: damage, invalid: false, using: &rng, now: now)
@@ -233,9 +237,13 @@ enum NegotiationEngine {
         state.reputation += session.repStake + RainmakerBalance.dealReputationReward
         state.activeNegotiation = nil
 
+        let script = NPCCatalog.profile(id: session.npcID)?.negotiationScript
         RainmakerEngine.append(
             .npcText(id: RainmakerEngine.uuid(using: &rng),
-                     text: fullBreak ? "……行，你赢了，全按你说的办。" : "就按这个条件，签吧。", at: now),
+                     text: fullBreak
+                         ? script?.fullBreak ?? "……行，你赢了，全按你说的办。"
+                         : script?.sign ?? "就按这个条件，签吧。",
+                     at: now),
             to: session.npcID, in: &state
         )
         RainmakerEngine.notify(
@@ -260,7 +268,9 @@ enum NegotiationEngine {
 
         RainmakerEngine.append(
             .npcText(id: RainmakerEngine.uuid(using: &rng),
-                     text: "你太贪了。这单不谈了，别再联系我。", at: now),
+                     text: NPCCatalog.profile(id: session.npcID)?.negotiationScript.bust
+                         ?? "你太贪了。这单不谈了，别再联系我。",
+                     at: now),
             to: session.npcID, in: &state
         )
         RainmakerEngine.notify(

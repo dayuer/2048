@@ -24,6 +24,18 @@ struct MockPersonaChatClient: PersonaChatClient {
             return "【\(name)·人设】收到：\(request.playerMessage ?? "")"
         case .ambient:
             return "【\(name)·人设】随口聊两句。"
+        case .negotiationOpen:
+            return "【\(name)·谈判】应战：底线不好压。"
+        case .negotiationHurt:
+            return "【\(name)·谈判】被【\(request.negotiation?.cardName ?? "?")】打痛，底线剩 \(request.negotiation?.defenseRemainingPercent ?? -1)%。"
+        case .negotiationTaunt:
+            return "【\(name)·谈判】嘲讽：【\(request.negotiation?.cardName ?? "?")】对我没用。"
+        case .negotiationSign:
+            return "【\(name)·谈判】签约成交。"
+        case .negotiationBreak:
+            return "【\(name)·谈判】底线击穿，认输。"
+        case .negotiationBust:
+            return "【\(name)·谈判】谈崩翻脸。"
         }
     }
 }
