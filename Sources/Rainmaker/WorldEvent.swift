@@ -41,6 +41,8 @@ enum WorldEvent: Equatable, Sendable {
     case dealOffer(npcID: String)        // NPC 发来项目单（含寒暄）
     case npcNudge(npcID: String)         // NPC 无由头来撩你一句
     case marketShift(to: MarketClimate)  // 市场气候变动 + 小何头条
+    case marketNews(MarketNews)          // 市场新闻：价格×÷/白给货（原版 gameMessages）
+    case streetIncident(StreetIncident)  // 街头事件：伤身/敲诈（原版 random_event/steal_event）
 }
 
 /// 世界事件调度器：负责「滚事件」（planning，确定性）与「应用事件」（execution）。
@@ -80,6 +82,24 @@ enum WorldEventScheduler {
             if let npc = (pool.isEmpty ? NPCCatalog.contacts : pool).shuffled(using: &rng).first {
                 events.append(.npcNudge(npcID: npc.id))
             }
+        }
+
+        // 市场新闻：逐条独立判定（原版 rand(950) % freq == 0），同日可多发
+        for news in StreetEventCatalog.newsPool
+        where StreetEventCatalog.fires(freq: news.freq, bound: 950, using: &rng) {
+            events.append(.marketNews(news))
+        }
+
+        // 街头事件：伤身/敲诈各至多一件（原版首中即 break）
+        for incident in StreetEventCatalog.healthIncidents
+        where StreetEventCatalog.fires(freq: incident.freq, bound: 1000, using: &rng) {
+            events.append(.streetIncident(incident))
+            break
+        }
+        for incident in StreetEventCatalog.stealIncidents
+        where StreetEventCatalog.fires(freq: incident.freq, bound: 1000, using: &rng) {
+            events.append(.streetIncident(incident))
+            break
         }
 
         return events
@@ -132,7 +152,80 @@ enum WorldEventScheduler {
                 .npcText(id: RainmakerEngine.uuid(using: &rng), text: line, at: now),
                 to: npc.id, in: &state
             )
+
+        case let .marketNews(news):
+            applyMarketNews(news, to: &state, using: &rng, now: now)
+
+        case let .streetIncident(incident):
+            applyStreetIncident(incident, to: &state, using: &rng, now: now)
         }
+    }
+
+    /// 市场新闻：涨跌只作用于当日有货的资产（原版 price==0 则跳过）；白给货受容量 clamp。
+    private static func applyMarketNews(
+        _ news: MarketNews, to state: inout RainmakerState,
+        using rng: inout some RandomNumberGenerator, now: Date
+    ) {
+        switch news.effect {
+        case let .surge(times):
+            guard let price = state.assetPrices?[news.assetID] else { return }
+            state.assetPrices?[news.assetID] = price * times
+        case let .crash(divisor):
+            guard let price = state.assetPrices?[news.assetID] else { return }
+            state.assetPrices?[news.assetID] = max(1, price / divisor)
+        case let .gift(count):
+            let granted = grantGoods(assetID: news.assetID, count: count, state: &state)
+            guard granted > 0 else {
+                RainmakerEngine.append(
+                    .systemNotice(id: RainmakerEngine.uuid(using: &rng),
+                                  text: "可惜!俺的托管账户太小，只能放 \(state.currentCapacity) 手。", at: now),
+                    to: RainmakerEngine.assistantNPCID, in: &state
+                )
+                return
+            }
+        case let .debtGift(count, debtCost):
+            // 村长硬卖：记账加债（原版 MyDebt += 2500），货照收（容量不够就少收）
+            state.debt = state.currentDebt + debtCost
+            _ = grantGoods(assetID: news.assetID, count: count, state: &state)
+        }
+        RainmakerEngine.append(
+            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
+                          text: "【新闻】\(news.headline)", at: now),
+            to: RainmakerEngine.assistantNPCID, in: &state
+        )
+    }
+
+    /// 街头事件：伤身扣健康（死亡判定在次日结算），敲诈按比例抽现金。
+    private static func applyStreetIncident(
+        _ incident: StreetIncident, to state: inout RainmakerState,
+        using rng: inout some RandomNumberGenerator, now: Date
+    ) {
+        let suffix: String
+        switch incident.effect {
+        case let .healthDamage(points):
+            state.health = max(0, state.currentHealth - points)
+            suffix = "俺的健康减少了 \(points) 点。"
+        case let .cashLossPercent(percent):
+            let loss = state.cash * percent / 100
+            state.cash -= loss
+            suffix = "俺损失了 \(loss) 万。"
+        }
+        RainmakerEngine.append(
+            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
+                          text: incident.text + suffix, at: now),
+            to: RainmakerEngine.assistantNPCID, in: &state
+        )
+    }
+
+    /// 白给货入库（容量 clamp，原版 addcount 语义）。返回实收手数。
+    private static func grantGoods(assetID: String, count: Int, state: inout RainmakerState) -> Int {
+        let space = state.currentCapacity - state.usedCapacity
+        let granted = min(count, max(0, space))
+        guard granted > 0 else { return 0 }
+        var holdings = state.currentHoldings
+        holdings[assetID, default: 0] += granted
+        state.holdings = holdings
+        return granted
     }
 
     /// 气候缩放，至少 1（估值/佣金单位是万，恒为正）。

@@ -81,7 +81,87 @@ final class RainmakerStore {
 
     func endDay() {
         RainmakerEngine.endDay(state: &state, using: &rng, now: .now)
+        playOutcomeSoundIfNeeded()
         commit()
+    }
+
+    // MARK: - 浮生记交易动作（音效为表现层，引擎保持纯净）
+
+    @discardableResult
+    func buy(assetID: String, quantity: Int) -> Bool {
+        let ok = TradeEngine.buy(assetID: assetID, quantity: quantity, state: &state)
+        if ok {
+            SoundPlayer.play("buy")
+            commit()
+        }
+        return ok
+    }
+
+    @discardableResult
+    func sell(assetID: String, quantity: Int) -> Bool {
+        let ok = TradeEngine.sell(assetID: assetID, quantity: quantity, state: &state)
+        if ok {
+            SoundPlayer.play("money")
+            commit()
+        }
+        return ok
+    }
+
+    @discardableResult
+    func repayDebt(amount: Int) -> Int {
+        let paid = TradeEngine.repayDebt(amount: amount, state: &state, using: &rng, now: .now)
+        if paid > 0 {
+            SoundPlayer.play("money")
+            commit()
+        }
+        return paid
+    }
+
+    @discardableResult
+    func deposit(amount: Int) -> Bool {
+        let ok = TradeEngine.deposit(amount: amount, state: &state)
+        if ok { commit() }
+        return ok
+    }
+
+    @discardableResult
+    func withdraw(amount: Int) -> Bool {
+        let ok = TradeEngine.withdraw(amount: amount, state: &state)
+        if ok { commit() }
+        return ok
+    }
+
+    @discardableResult
+    func heal() -> Int {
+        let cost = TradeEngine.heal(state: &state)
+        if cost > 0 {
+            SoundPlayer.play("opendoor")
+            commit()
+        }
+        return cost
+    }
+
+    @discardableResult
+    func upgradeCapacity() -> Bool {
+        let ok = TradeEngine.upgradeCapacity(state: &state)
+        if ok {
+            SoundPlayer.play("level")
+            commit()
+        }
+        return ok
+    }
+
+    /// 跑一个圈子 = 过一天。
+    func travel(to venueID: String) {
+        TradeEngine.travel(to: venueID, state: &state, using: &rng, now: .now)
+        playOutcomeSoundIfNeeded()
+        commit()
+    }
+
+    /// 终局音：上岸奏 level，其余奏 death（原版语义）。
+    private func playOutcomeSoundIfNeeded() {
+        guard state.isGameOver else { return }
+        SoundPlayer.play(state.outcome == .victory ? "level" : "death")
     }
 
     /// 沙盘顿悟：里程碑 → 掉卡/档案/属性（由沙盘承载页转发）。

@@ -53,6 +53,47 @@ struct ProfileView: View {
                     .listRowBackground(Color.clear)
                 }
 
+                // 浮生面板：债务/健康/仓位/银行/医院——浮生记生存系统
+                Section("北京浮生") {
+                    LabeledContent("欠村长") {
+                        Text("\(store.state.currentDebt) 万 · 日息一成")
+                            .foregroundStyle(store.state.currentDebt > 0 ? .red : WA.textSecondary)
+                            .monospacedDigit()
+                    }
+                    LabeledContent("大限", value: "第 \(store.state.day)/\(RainmakerBalance.deadlineDay) 天")
+                    LabeledContent("健康") {
+                        Text("\(store.state.currentHealth)/\(RainmakerBalance.startHealth)")
+                            .foregroundStyle(store.state.currentHealth < 40 ? .red : WA.textPrimary)
+                            .monospacedDigit()
+                    }
+                    LabeledContent("托管仓位", value: "\(store.state.usedCapacity)/\(store.state.currentCapacity) 手")
+                    LabeledContent("银行存款", value: "\(store.state.currentBankDeposit) 万 · 日息 1%")
+                    LabeledContent("净资产") {
+                        Text("\(store.state.netWorth) 万")
+                            .foregroundStyle(store.state.netWorth >= 0 ? WA.accent : .red)
+                            .monospacedDigit()
+                    }
+
+                    if store.state.currentHealth < RainmakerBalance.startHealth {
+                        Button("去私立医院（\(RainmakerBalance.healCostPerPoint) 万/点，尽力治）") {
+                            store.heal()
+                        }
+                        .disabled(store.state.cash < RainmakerBalance.healCostPerPoint)
+                    }
+                    HStack {
+                        Button("现金全存银行") { store.deposit(amount: store.state.cash) }
+                            .disabled(store.state.cash <= 0)
+                        Spacer()
+                        Button("存款全取") { store.withdraw(amount: store.state.currentBankDeposit) }
+                            .disabled(store.state.currentBankDeposit <= 0)
+                    }
+                    .buttonStyle(.borderless)
+                    Button("托管扩容 +\(RainmakerBalance.capacityUpgradeGain) 手（\(RainmakerBalance.capacityUpgradeCost) 万）") {
+                        store.upgradeCapacity()
+                    }
+                    .disabled(store.state.cash < RainmakerBalance.capacityUpgradeCost)
+                }
+
                 Section("本局") {
                     LabeledContent("已成交项目", value: "\(store.state.deals.filter { $0.status == .won }.count) 单")
                     LabeledContent("话术卡库", value: "\(store.state.cardInventory?.count ?? 0)/\(RainmakerBalance.cardInventoryCap)")

@@ -9,6 +9,7 @@ struct MessagesView: View {
     @State private var query = ""
     @State private var filter: RainmakerStore.ThreadFilter = .all
     @State private var showNewChat = false
+    @State private var showTravel = false
     @State private var path = NavigationPath()
 
     private var threads: [NPCThread] {
@@ -67,6 +68,22 @@ struct MessagesView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    // 跑市场：奔走一个圈子 = 过一天（浮生记核心节奏）
+                    Button {
+                        showTravel = true
+                    } label: {
+                        Label(
+                            TradeCatalog.venue(id: store.state.currentVenueID)?.name ?? "跑市场",
+                            systemImage: "figure.run"
+                        )
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(WA.accent)
+                        .padding(.horizontal, 10)
+                        .frame(height: 34)
+                        .background(WA.accent.opacity(0.15), in: Capsule())
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showNewChat = true
                     } label: {
@@ -83,6 +100,9 @@ struct MessagesView: View {
                     showNewChat = false
                     path.append(npcID)
                 }
+            }
+            .sheet(isPresented: $showTravel) {
+                TravelSheet(store: store)
             }
         }
         .confirmationDialog(
@@ -197,7 +217,7 @@ private struct NewChatSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var allProfiles: [NPCProfile] {
-        [NPCCatalog.assistant] + NPCCatalog.contacts
+        [NPCCatalog.assistant, NPCCatalog.creditor] + NPCCatalog.contacts + NPCCatalog.dealers
     }
 
     var body: some View {

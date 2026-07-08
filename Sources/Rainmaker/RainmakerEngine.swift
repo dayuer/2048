@@ -20,7 +20,7 @@ enum RainmakerEngine {
         append(
             .systemNotice(
                 id: uuid(using: &rng),
-                text: "欢迎入行。账上 \(state.cash) 万，每天固定开销 \(RainmakerBalance.burnRate) 万——现金归零就出局。",
+                text: "欢迎来京。账上 \(state.cash) 万，身上背着 \(RainmakerBalance.startDebt) 万过桥资金（日息一成）——\(RainmakerBalance.deadlineDay) 天内还清债务并活下来。",
                 at: now
             ),
             to: assistantNPCID, in: &state
@@ -28,12 +28,29 @@ enum RainmakerEngine {
         append(
             .npcText(
                 id: uuid(using: &rng),
-                text: "老板，联系人都帮你约好了。接单消耗尽调工时，工时用完记得【结束今日】结算。",
+                text: "老板，联系人都帮你约好了。接单谈判赚佣金，跑圈子倒卖赚价差——两条路都能还债。跑一个圈子算一天，工时用完记得【结束今日】。",
                 at: now
             ),
             to: assistantNPCID, in: &state
         )
+        // 浮生记开局：债务/健康/托管/所在圈子 + 首日行情
         state.marketClimate = .neutral
+        state.debt = RainmakerBalance.startDebt
+        state.venueID = TradeCatalog.startVenueID
+        state.health = RainmakerBalance.startHealth
+        state.bankDeposit = 0
+        state.capacity = RainmakerBalance.startCapacity
+        state.holdings = [:]
+        append(
+            .npcText(
+                id: uuid(using: &rng),
+                text: "娃，到北京了吧？\(RainmakerBalance.startDebt) 万可是村里人凑的，日息一成，\(RainmakerBalance.deadlineDay) 天内还清。混好了荣归故里，混不好……村里人都看着你呢。",
+                at: now
+            ),
+            to: NPCCatalog.creditor.id, in: &state
+        )
+        TradeEngine.rollPrices(state: &state, using: &rng)
+        appendDealerQuoteFlavor(state: &state, using: &rng, now: now)
         for event in WorldEventScheduler.rollOpening(dealCount: 2, using: &rng) {
             WorldEventScheduler.apply(event, to: &state, using: &rng, now: now)
         }
@@ -90,6 +107,7 @@ enum RainmakerEngine {
 
         if state.cash <= 0 {
             state.isGameOver = true
+            state.outcome = .bankrupt
             append(.npcText(id: uuid(using: &rng),
                             text: "老板……账上没钱了，职场信用已破产。本期实战到此为止，复盘后重来吧。",
                             at: now),
@@ -97,14 +115,31 @@ enum RainmakerEngine {
             return
         }
 
+        // 浮生记结算：滚债息/生存息/村长催债/健康判定 → 40 天大限
+        if TradeEngine.dailyDebtAndHealthTick(state: &state, using: &rng, now: now) { return }
+        if TradeEngine.settleDeadlineIfDue(state: &state, using: &rng, now: now) { return }
+
         state.day += 1
         state.ap = RainmakerBalance.apPerDay
+        // 新的一天：当地行情先滚，世界事件（含资产新闻）随后修正价格
+        TradeEngine.rollPrices(state: &state, using: &rng)
+        appendDealerQuoteFlavor(state: &state, using: &rng, now: now)
         for event in WorldEventScheduler.rollDay(state: state, using: &rng) {
             WorldEventScheduler.apply(event, to: &state, using: &rng, now: now)
         }
     }
 
     // MARK: - 私有
+
+    /// 当日驻场贩子来一句行情吆喝（正文由台词池出，联网时被人设生成覆盖）。
+    private static func appendDealerQuoteFlavor(
+        state: inout RainmakerState, using rng: inout some RandomNumberGenerator, now: Date
+    ) {
+        guard let venue = TradeCatalog.venue(id: state.currentVenueID),
+              let dealer = NPCCatalog.profile(id: venue.dealerID),
+              let line = dealer.smallTalk.randomElement(using: &rng) else { return }
+        append(.npcText(id: uuid(using: &rng), text: line, at: now), to: dealer.id, in: &state)
+    }
 
     /// 追加事件；线程不存在则新建。（NegotiationEngine / WorldEventScheduler 共用）
     static func append(_ event: RainmakerEvent, to npcID: String, in state: inout RainmakerState) {

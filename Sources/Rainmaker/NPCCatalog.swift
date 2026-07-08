@@ -105,8 +105,8 @@ enum NPCCatalog {
                 "改天来我们办公室，给你演示新版本。",
             ],
             dealTemplates: [
-                DealTemplate(title: "SaaS A 轮找领投", valuationRange: 8000...15000, commissionRange: 18...30),
-                DealTemplate(title: "老股转让找接盘方", valuationRange: 5000...9000, commissionRange: 12...20),
+                DealTemplate(title: "SaaS A 轮找领投", valuationRange: 8000...15000, commissionRange: 450...750),
+                DealTemplate(title: "老股转让找接盘方", valuationRange: 5000...9000, commissionRange: 300...500),
             ]
         ),
         NPCProfile(
@@ -132,8 +132,8 @@ enum NPCCatalog {
                 "钱的事不急，生意是长跑。",
             ],
             dealTemplates: [
-                DealTemplate(title: "连锁餐饮扩张融资", valuationRange: 3000...6000, commissionRange: 10...18),
-                DealTemplate(title: "区域品牌并购撮合", valuationRange: 4000...8000, commissionRange: 14...24),
+                DealTemplate(title: "连锁餐饮扩张融资", valuationRange: 3000...6000, commissionRange: 250...450),
+                DealTemplate(title: "区域品牌并购撮合", valuationRange: 4000...8000, commissionRange: 350...600),
             ]
         ),
         NPCProfile(
@@ -159,8 +159,8 @@ enum NPCCatalog {
                 "行业冷的时候，才看得出谁在裸泳。",
             ],
             dealTemplates: [
-                DealTemplate(title: "基金份额转让撮合", valuationRange: 10000...20000, commissionRange: 22...40),
-                DealTemplate(title: "项目库尽调外包", valuationRange: 2000...4000, commissionRange: 8...14),
+                DealTemplate(title: "基金份额转让撮合", valuationRange: 10000...20000, commissionRange: 550...1000),
+                DealTemplate(title: "项目库尽调外包", valuationRange: 2000...4000, commissionRange: 200...350),
             ]
         ),
         NPCProfile(
@@ -186,14 +186,149 @@ enum NPCCatalog {
                 "晚上喝酒？把张主任也叫上。",
             ],
             dealTemplates: [
-                DealTemplate(title: "企业落地招商返佣", valuationRange: 2000...5000, commissionRange: 10...16),
-                DealTemplate(title: "厂房资产盘活交易", valuationRange: 6000...12000, commissionRange: 16...28),
+                DealTemplate(title: "企业落地招商返佣", valuationRange: 2000...5000, commissionRange: 250...400),
+                DealTemplate(title: "厂房资产盘活交易", valuationRange: 6000...12000, commissionRange: 400...700),
             ]
+        ),
+    ]
+
+    // MARK: 浮生记线——债主与驻场贩子
+
+    /// 赵村长：老家高利贷债主（浮生记「村长」的创投化身），每天催债。
+    static let creditor = NPCProfile(
+        id: "cunzhang",
+        name: "赵村长",
+        role: "债主 · 民间资本",
+        icon: "person.badge.shield.exclamationmark",
+        persona: NPCPersona(
+            background: "老家村长出身的民间资本大佬，借给你 5000 万过桥资金进京做掮客，日息一成。",
+            voice: "土味狠话混着人情绑架，一口一个「娃」，笑里藏刀。",
+            values: "只认钱按天到账；讲乡情，但乡情从不抵利息。",
+            quirks: "口头禅「利息可不等人呐」，威胁完总补一句「村里人都看着你呢」。",
+            negotiationStance: "不谈判：还钱是唯一话题，逾期就叫在京老乡上门。"
+        ),
+        greetings: [],
+        smallTalk: [
+            "娃，本钱是村里人凑的，别让乡亲们寒心。",
+            "利息可不等人呐，今天又滚了一成。",
+            "在北京混得咋样？混不好也得先把账清了。",
+            "别躲着我，村里人都看着你呢。",
+        ],
+        dealTemplates: []
+    )
+
+    /// 八大圈子的驻场贩子：每天甩当地行情，倒卖全靠他们。
+    static let dealers: [NPCProfile] = [
+        NPCProfile(
+            id: "dealer-zgc", name: "老猫", role: "中关村 · 原始股贩子", icon: "cpu",
+            persona: NPCPersona(
+                background: "中关村混了二十年的原始股倒爷，创业公司死活名单背得比谁都熟。",
+                voice: "语速快、江湖黑话多，张口「哥们儿」，句句带行情。",
+                values: "只认信息差和出手速度，砸手里的货从不留过夜。",
+                quirks: "报价前先啧一声，爱说「这价儿过了这村没这店」。",
+                negotiationStance: "小单爽快，大单必掺水——货得自己验。"
+            ),
+            greetings: [],
+            smallTalk: ["哥们儿，今天有几手好货，看不看？", "行情一天三变，犹豫就是亏。", "中关村的地面消息，比新闻快三天。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-jrj", name: "金姐", role: "金融街 · 份额掮客", icon: "building.columns",
+            persona: NPCPersona(
+                background: "前券商营业部老总，转行做基金份额和可转债的地下撮合。",
+                voice: "端庄客气，字斟句酌，永远像在念合规话术——但价从不含糊。",
+                values: "看重对手方履约记录，一次违约永不再做。",
+                quirks: "开头总是「按今天的口径」，结尾必补「仅供参考」。",
+                negotiationStance: "价格公道量又足，但灰色货绝不沾手（明面上）。"
+            ),
+            greetings: [],
+            smallTalk: ["按今天的口径，份额价有波动，仅供参考。", "金融街消息面紧，出手要合时宜。", "老客户我留了点额度。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-gm", name: "Tony 蔡", role: "国贸 · 老股中介", icon: "building.2.crop.circle",
+            persona: NPCPersona(
+                background: "外资背景的老股中介，专做独角兽老股和美元基金水单。",
+                voice: "中英夹杂，礼貌而精明，「my friend」不离口。",
+                values: "只做大票，看不上散碎生意；名声就是他的牌照。",
+                quirks: "报价用美元换算再折回人民币，显得专业。",
+                negotiationStance: "大票折扣硬，但交割干净不拖泥带水。"
+            ),
+            greetings: [],
+            smallTalk: ["My friend，今天有个 block trade，兴趣吗？", "独角兽的老股，过了窗口价格就两样了。", "国贸的咖啡贵，但消息值这个价。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-wj", name: "朴哥", role: "望京 · 跨境倒爷", icon: "globe.asia.australia",
+            persona: NPCPersona(
+                background: "做中韩跨境生意起家，现在倒美元基金份额和海外算力。",
+                voice: "豪爽带口音，三句话不离「兄弟」和汇率。",
+                values: "赚汇差和信息差，最恨政策一刀切。",
+                quirks: "报价先看当天汇率牌价，爱说「过了今晚汇率就变了」。",
+                negotiationStance: "量大从优，现金为王，不赊账。"
+            ),
+            greetings: [],
+            smallTalk: ["兄弟，今天汇率合适，出手正当时。", "望京的货源，半个亚洲都认。", "过了今晚，价就不是这个价了。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-wdk", name: "学生仔", role: "五道口 · 校园黄牛", icon: "graduationcap",
+            persona: NPCPersona(
+                background: "名校辍学生，在宇宙中心倒天使轮原始股和算力券，客户全是学弟学妹。",
+                voice: "年轻气盛，网络热梗多，动不动「家人们」。",
+                values: "信奉一夜暴富叙事，胆子比本钱大。",
+                quirks: "推销必带一句「这是下一个字节」。",
+                negotiationStance: "价格乱但偶有捡漏，风险自担。"
+            ),
+            greetings: [],
+            smallTalk: ["家人们，今天这货是下一个字节！", "五道口的消息，宿舍楼比路演厅灵。", "早买早享受，晚买哭着求。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-hcc", name: "老K", role: "后厂村 · 码农贩子", icon: "laptopcomputer.and.iphone",
+            persona: NPCPersona(
+                background: "大厂十年老码农，副业倒算力租赁券和刷量数据包，内网消息灵通。",
+                voice: "理工直男，说话像写注释，冷幽默。",
+                values: "一切用数据说话，鄙视讲故事的。",
+                quirks: "报价精确到小数点，爱说「按我脚本回测」。",
+                negotiationStance: "价格透明童叟无欺，但灰货概不售后。"
+            ),
+            greetings: [],
+            smallTalk: ["按我脚本回测，今天算力券性价比高。", "内网都在传大模型扩容，你懂的。", "数据包这东西，用得好是增长，用不好是证据。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-yz", name: "厂长", role: "亦庄 · 产业倒爷", icon: "gearshape.2",
+            persona: NPCPersona(
+                background: "开发区老厂长，专倒壳公司牌照和产业额度，跟园区管委会熟得很。",
+                voice: "官腔混着厂味儿，慢条斯理，「按规矩来」挂嘴边。",
+                values: "讲关系讲程序，快钱不赚，稳钱不放。",
+                quirks: "谈价先递烟（你不抽他自己点上），说「牌照这东西，懂的都懂」。",
+                negotiationStance: "壳货水深，他知道每口井的深浅。"
+            ),
+            greetings: [],
+            smallTalk: ["牌照这东西，懂的都懂。", "开发区风声紧的时候，货就值钱了。", "按规矩来，谁都别想快。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-slt", name: "夜场李", role: "三里屯 · 消息贩子", icon: "wineglass",
+            persona: NPCPersona(
+                background: "三里屯夜场老板，酒桌上什么额度都能撮合，突击入股的单子多从他这儿出。",
+                voice: "油滑热络，夜场腔，「贵人」「面子」不离口。",
+                values: "人脉即货源，酒品即人品。",
+                quirks: "谈事必约酒，说「这单看在你面子上」。",
+                negotiationStance: "高危高利，出了事他永远「不知情」。"
+            ),
+            greetings: [],
+            smallTalk: ["贵人，今晚有个局，来不来？", "突击入股的额度，过了窗口神仙也拿不到。", "这单看在你面子上，别外传。"],
+            dealTemplates: []
         ),
     ]
 
     static func profile(id: String) -> NPCProfile? {
         if id == assistant.id { return assistant }
+        if id == creditor.id { return creditor }
+        if let dealer = dealers.first(where: { $0.id == id }) { return dealer }
         return contacts.first { $0.id == id }
     }
 }

@@ -1,8 +1,9 @@
 import Foundation
 
-/// 《顶级掮客》Phase 1 数值表。资金单位：万元。
+/// 《顶级掮客》数值表。资金单位：万元。
+/// 浮生记融合后开局对齐原版：现金 2000 / 欠债 5000。
 enum RainmakerBalance {
-    static let startCash = 100
+    static let startCash = 2000
     static let startReputation = 50
     static let apPerDay = 4
     /// 每日固定开销（房租/团队），结算时自动扣除。
@@ -31,6 +32,38 @@ enum RainmakerBalance {
     static let cardInventoryCap = 5
     /// 每场谈判最多从卡库带走的卡数（开局即消耗）。
     static let inventoryHandBonus = 2
+
+    // MARK: 浮生记线（数值锚定原版：2000/5000/日息10%/容量100/40天）
+
+    /// 欠赵村长的过桥资金（万）。
+    static let startDebt = 5000
+    /// 债务日息（每天结算时滚入本金）。
+    static let debtDailyRate = 0.10
+    /// 银行存款日息。
+    static let bankDailyRate = 0.01
+    /// 大限：40 天内见分晓。
+    static let deadlineDay = 40
+    /// 开局健康值；归零 = 牺牲在北京街头。
+    static let startHealth = 100
+    /// 托管账户初始容量（手）。
+    static let startCapacity = 100
+    /// 扩容一次的价格（万）与增量（手）——原版租房 20000 元 → +10。
+    static let capacityUpgradeCost = 20000
+    static let capacityUpgradeGain = 10
+    /// 私立医院回血价：每点健康（万）——原版 3500 元/点。
+    static let healCostPerPoint = 3500
+    /// 卖出涉灰资产每笔扣的信誉。
+    static let greySellRepPenalty = 1
+    /// 债务逾期（后期未清）时老乡上门的健康伤害。
+    static let overdueBeatingDamage = 25
+}
+
+/// 终局方式：浮生记式结算。
+enum RunOutcome: String, Codable, Sendable {
+    case bankrupt        // 现金归零（原有破产）
+    case beaten          // 健康归零，牺牲在北京街头
+    case debtUnpaid      // 40 天到期债没还清，被老乡「处理」
+    case victory         // 40 天到期且无债——上岸，按净资产登榜
 }
 
 /// NPC 发来的项目单（商业计划书卡片）。Phase 2：接单即进入条款谈判。
@@ -117,6 +150,41 @@ struct RainmakerState: Codable, Equatable, Sendable {
 
     /// 当前气候，缺省中性。
     var climate: MarketClimate { marketClimate ?? .neutral }
+
+    // MARK: 浮生记线（全部 Optional 兼容旧存档，读取走带默认值的访问器）
+
+    /// 欠赵村长的债（万），每日滚息。
+    var debt: Int?
+    /// 当前所在圈子 id。
+    var venueID: String?
+    /// 健康值，归零出局。
+    var health: Int?
+    /// 银行存款（万），日息生息。
+    var bankDeposit: Int?
+    /// 托管容量（手）。
+    var capacity: Int?
+    /// 持仓：资产 id → 手数。
+    var holdings: [String: Int]?
+    /// 当日当地行情：资产 id → 单价（万）。缺席的资产 = 今日无货。
+    var assetPrices: [String: Int]?
+    /// 终局方式（isGameOver 时有值；victory 也置 isGameOver 终止操作）。
+    var outcome: RunOutcome?
+
+    var currentDebt: Int { debt ?? 0 }
+    var currentVenueID: String { venueID ?? TradeCatalog.startVenueID }
+    var currentHealth: Int { health ?? RainmakerBalance.startHealth }
+    var currentBankDeposit: Int { bankDeposit ?? 0 }
+    var currentCapacity: Int { capacity ?? RainmakerBalance.startCapacity }
+    var currentHoldings: [String: Int] { holdings ?? [:] }
+    /// 已占用的托管手数。
+    var usedCapacity: Int { currentHoldings.values.reduce(0, +) }
+    /// 净资产 = 现金 + 存款 + 持仓市价 - 债务（登榜分数）。
+    var netWorth: Int {
+        let stockValue = currentHoldings.reduce(0) { sum, entry in
+            sum + (assetPrices?[entry.key] ?? TradeCatalog.asset(id: entry.key)?.basePrice ?? 0) * entry.value
+        }
+        return cash + currentBankDeposit + stockValue - currentDebt
+    }
 
     init(
         day: Int, cash: Int, reputation: Int, ap: Int, isGameOver: Bool,

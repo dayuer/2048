@@ -47,6 +47,12 @@ struct RainmakerThreadView: View {
                 if store.state.activeNegotiation?.npcID == npcID {
                     NegotiationPanel(store: store)
                 }
+                if npcID == NPCCatalog.creditor.id {
+                    DebtPanel(store: store)
+                }
+                if TradeCatalog.venueOfDealer(npcID) != nil {
+                    TradingPanel(store: store, dealerID: npcID)
+                }
                 ComposerBar { text in
                     store.sendMessage(text, to: npcID)
                 }

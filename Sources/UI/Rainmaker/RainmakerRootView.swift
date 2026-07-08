@@ -36,27 +36,60 @@ struct RainmakerRootView: View {
     }
 }
 
-/// 破产结算：全屏覆盖，只留【重新开局】一条出路。
+/// 终局结算：浮生记四结局（上岸登榜 / 债未清被处理 / 街头倒下 / 破产），全屏覆盖。
 struct GameOverView: View {
     let store: RainmakerStore
+
+    private var outcome: RunOutcome { store.state.outcome ?? .bankrupt }
+    private var isVictory: Bool { outcome == .victory }
+
+    private var icon: String {
+        switch outcome {
+        case .victory: "trophy.fill"
+        case .debtUnpaid: "person.2.slash.fill"
+        case .beaten: "cross.case.fill"
+        case .bankrupt: "chart.line.downtrend.xyaxis"
+        }
+    }
+
+    private var title: String {
+        switch outcome {
+        case .victory: "上岸！荣登浮生排行榜"
+        case .debtUnpaid: "债未还清，老乡们来了"
+        case .beaten: "你倒在了北京街头"
+        case .bankrupt: "职场信用破产"
+        }
+    }
+
+    private var subtitle: String {
+        switch outcome {
+        case .victory: "四十天两清，净资产 \(store.state.netWorth) 万。北京，俺征服你了。"
+        case .debtUnpaid: "还差 \(store.state.currentDebt) 万。村长说：别怪他心狠。"
+        case .beaten: "健康归零。北京的日子，比想象中硬。"
+        case .bankrupt: "现金流断裂，本期实战评估终止。复盘后再来。"
+        }
+    }
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.92).ignoresSafeArea()
             VStack(spacing: 20) {
-                Image(systemName: "chart.line.downtrend.xyaxis")
+                Image(systemName: icon)
                     .font(.system(size: 56))
-                    .foregroundStyle(.red)
-                Text("职场信用破产")
+                    .foregroundStyle(isVictory ? .yellow : .red)
+                Text(title)
                     .font(.largeTitle.bold())
                     .foregroundStyle(.white)
-                Text("实战坚持 \(store.state.day) 天 · 信誉 \(store.state.reputation)")
+                    .multilineTextAlignment(.center)
+                Text("浮生 \(store.state.day) 天 · 信誉 \(store.state.reputation) · 净资产 \(store.state.netWorth) 万")
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.7))
-                Text("现金流断裂，本期实战评估终止。复盘后再来。")
+                    .monospacedDigit()
+                Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.5))
-                Button("重新开始实战") { store.restart() }
+                    .multilineTextAlignment(.center)
+                Button(isVictory ? "再闯一次北京" : "重新开始实战") { store.restart() }
                     .buttonStyle(WAPrimaryButtonStyle())
                     .padding(.horizontal, 48)
                     .padding(.top, 12)

@@ -7,6 +7,7 @@ struct GlossaryEntry: Identifiable, Equatable, Sendable {
         case termSheet = "Term Sheet 条款"
         case negotiation = "谈判战术"
         case ecosystem = "行业生态"
+        case greyAsset = "灰色资产"
     }
 
     let id: String
@@ -145,6 +146,48 @@ enum Glossary {
             definition: "用少量自有资金 + 大量债务收购公司，再用公司自身现金流还债。1988 年 RJR 纳贝斯克 250 亿美元世纪之战使其登峰造极——「门口的野蛮人」由此得名。",
             source: "《门口的野蛮人》Burrough & Helyar",
             relatedCardIDs: ["barbarians"]
+        ),
+
+        // MARK: 灰色资产（浮生记倒卖线——知道自己在买什么、坑在哪）
+        GlossaryEntry(
+            id: "asset-angel-stock", term: "天使轮原始股", english: "Pre-seed Equity", category: .greyAsset,
+            definition: "未上市早期公司的股权份额。合规路径要走股转协议和工商变更；黑市上「原始股」三个字是骗局重灾区——绝大多数买家的下场是股权无法登记、公司蒸发。价格极低波动极大，正因为它可能一文不值。",
+            source: "创投通识 · 反诈"
+        ),
+        GlossaryEntry(
+            id: "asset-tail-round", term: "尾轮跟投份额", english: "Late-stage Co-invest Allocation", category: .greyAsset,
+            definition: "Pre-IPO 前最后几轮的小额跟投额度，常由领投机构分销。看似稳赚，实则接盘位：估值已被前几轮推满，二级破发即亏损。判断关键是领投方是否真金加注。",
+            source: "创投通识"
+        ),
+        GlossaryEntry(
+            id: "asset-compute-voucher", term: "算力租赁券", english: "Compute Voucher", category: .greyAsset,
+            definition: "预付的 GPU/云算力使用权凭证，AI 热潮中的硬通货。价格随模型军备竞赛暴涨、随云厂商降价暴跌——本质是对算力供需的杠杆敞口。",
+            source: "行业观察"
+        ),
+        GlossaryEntry(
+            id: "asset-traffic-pack", term: "刷量数据包", english: "Fake Traffic Bundle", category: .greyAsset,
+            definition: "批量伪造的用户/流量数据，用于粉饰增长指标骗融资。卖它掉名声：尽调中被查出刷量，公司估值直接归零，FA 连带信誉扫地——这是创投圈的「伪劣化妆品」。",
+            source: "尽调实务 · 反面教材"
+        ),
+        GlossaryEntry(
+            id: "asset-usd-fund", term: "水货美元基金份额", english: "Grey-market USD Fund Share", category: .greyAsset,
+            definition: "绕开外汇与合格投资者监管、私下转让的美元基金 LP 份额。收益挂钩汇率与基金业绩，但转让本身不受法律保护——出事时你甚至证明不了自己是 LP。",
+            source: "跨境合规通识"
+        ),
+        GlossaryEntry(
+            id: "asset-shell-license", term: "壳公司牌照", english: "Shell Company License", category: .greyAsset,
+            definition: "有牌照/上市地位但无实际业务的公司壳。借壳上市回暖时价格翻番，监管严打时砸手里。识壳三看：或有负债、历史沿革、牌照续期风险。",
+            source: "《企业方法》刘韧 · 并购实务"
+        ),
+        GlossaryEntry(
+            id: "asset-pre-ipo", term: "突击入股额度", english: "Pre-IPO Placement Quota", category: .greyAsset,
+            definition: "临近 IPO 突击入股的稀缺额度，黑市溢价惊人。监管明令限制上市前 12 个月新增股东——买它赌的是过会窗口，窗口一关就是烫手山芋，还可能把发行人一起拖下水。",
+            source: "证券监管通识"
+        ),
+        GlossaryEntry(
+            id: "asset-unicorn-stake", term: "独角兽老股", english: "Unicorn Secondary", category: .greyAsset,
+            definition: "独角兽公司早期股东转让的存量股份（Secondary）。流动性差、信息不对称大：卖方永远比你懂公司。折价买入是常态，关键在拿到真实财务数据和优先清算条款全貌。",
+            source: "《说谎者的扑克牌》Michael Lewis · 二级市场智慧"
         ),
     ]
 
