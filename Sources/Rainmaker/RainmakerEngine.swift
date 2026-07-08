@@ -49,8 +49,12 @@ enum RainmakerEngine {
         guard !trimmed.isEmpty, let npc = NPCCatalog.profile(id: npcID) else { return }
 
         append(.playerText(id: uuid(using: &rng), text: trimmed, at: now), to: npcID, in: &state)
-        let reply = npc.smallTalk.randomElement(using: &rng) ?? "回头细聊。"
-        append(.npcText(id: uuid(using: &rng), text: reply, at: now), to: npcID, in: &state)
+        append(.npcText(id: uuid(using: &rng), text: poolReply(for: npc, using: &rng), at: now), to: npcID, in: &state)
+    }
+
+    /// 从台词池抽一句确定性回复。真相层与断网/未配置的回退共用此函数。
+    static func poolReply(for npc: NPCProfile, using rng: inout some RandomNumberGenerator) -> String {
+        npc.smallTalk.randomElement(using: &rng) ?? "回头细聊。"
     }
 
     // MARK: - 每日结算

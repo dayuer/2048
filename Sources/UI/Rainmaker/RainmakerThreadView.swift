@@ -67,8 +67,8 @@ struct RainmakerThreadView: View {
     @ViewBuilder
     private func eventView(_ event: RainmakerEvent) -> some View {
         switch event {
-        case let .npcText(_, text, at):
-            TextBubble(text: text, at: at, mine: false)
+        case let .npcText(_, _, at):
+            TextBubble(text: store.displayText(for: event), at: at, mine: false)
         case let .playerText(_, text, at):
             TextBubble(text: text, at: at, mine: true)
         case let .systemNotice(_, text, _):

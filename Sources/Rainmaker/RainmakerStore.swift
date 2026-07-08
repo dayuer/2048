@@ -21,6 +21,15 @@ final class RainmakerStore {
     var instantDelivery = false
     private var deliveryTasks: [String: Task<Void, Never>] = [:]
 
+    // MARK: 生成式对话（显示层覆盖，不持久化）
+
+    /// 生成式对话接入。nil = 不接入 → 走确定性台词池（默认）。
+    var personaChat: PersonaChatClient?
+    /// 事件 id → LLM 生成文本。真相层永不变，UI 经 displayText 覆盖显示。
+    private(set) var generatedText: [UUID: String] = [:]
+    /// 该线程可增强的最近 N 轮历史（喂给生成式做记忆连续）。
+    private let historyWindow = 8
+
     init(fileURL: URL = RainmakerStore.defaultFileURL) {
         self.fileURL = fileURL
         if let data = try? Data(contentsOf: fileURL),
@@ -89,6 +98,7 @@ final class RainmakerStore {
         deliveryTasks = [:]
         typingNPCIDs = []
         revealedCounts = [:]
+        generatedText = [:]
         state = RainmakerEngine.newRun(using: &rng, now: .now)
         commit()
     }
@@ -144,6 +154,18 @@ final class RainmakerStore {
         return Array(events.prefix(revealedCounts[npcID] ?? 0))
     }
 
+    /// UI 展示文本：npcText 若有生成式覆盖则用之，否则用真相层原文；其余事件用原文。
+    func displayText(for event: RainmakerEvent) -> String {
+        switch event {
+        case let .npcText(id, text, _):
+            return generatedText[id] ?? text
+        case let .playerText(_, text, _), let .systemNotice(_, text, _):
+            return text
+        case .dealOffer:
+            return ""
+        }
+    }
+
     /// 未读 = 已读游标之后、已送达的非我方事件数（没送达的不算，角标随送达增长）。
     func unreadCount(npcID: String) -> Int {
         let visible = visibleEvents(npcID: npcID)
@@ -182,6 +204,8 @@ final class RainmakerStore {
     }
 
     /// 逐条送达：我方消息即时；NPC 文字先「正在输入…」再到；通知/卡片短暂停顿。
+    /// 联系人 NPC 文字若接入了生成式，await 期间即「正在输入…」——网络延迟天然充当「先想后说」节奏；
+    /// 失败/未接入则回退固定 900ms + 真相层台词池文本。
     private func deliver(npcID: String) async {
         defer {
             deliveryTasks[npcID] = nil
@@ -196,9 +220,16 @@ final class RainmakerStore {
                 revealedCounts[npcID] = index + 1
                 continue
             }
-            if case .npcText = event {
+            if case let .npcText(eventID, _, _) = event {
                 typingNPCIDs.insert(npcID)
-                try? await Task.sleep(for: .milliseconds(900))
+                if let client = personaChat, let request = personaChatRequest(npcID: npcID, index: index) {
+                    if let text = try? await client.reply(for: request) {
+                        generatedText[eventID] = text
+                    }
+                    // 生成失败：直接揭示台词池原文（不再补睡）
+                } else {
+                    try? await Task.sleep(for: .milliseconds(900))
+                }
                 typingNPCIDs.remove(npcID)
             } else {
                 try? await Task.sleep(for: .milliseconds(400))
@@ -206,6 +237,55 @@ final class RainmakerStore {
             if Task.isCancelled { return }
             revealedCounts[npcID] = index + 1
         }
+    }
+
+    /// 为第 index 条联系人 npcText 组请求：意图由邻居推断，历史取最近 N 轮。
+    /// 返回 nil 表示不增强（assistant 线程 / 非 npcText / 越界）。
+    private func personaChatRequest(npcID: String, index: Int) -> PersonaChatRequest? {
+        guard npcID != RainmakerEngine.assistantNPCID,
+              let profile = NPCCatalog.profile(id: npcID),
+              let events = state.threads.first(where: { $0.id == npcID })?.events,
+              index < events.count,
+              case .npcText = events[index] else { return nil }
+
+        let intent: PersonaChatRequest.Intent
+        var playerMessage: String?
+        var deal: PersonaChatRequest.DealContext?
+        if index > 0, case let .playerText(_, text, _) = events[index - 1] {
+            intent = .reply
+            playerMessage = text
+        } else if index + 1 < events.count, case let .dealOffer(_, dealID, _) = events[index + 1] {
+            intent = .dealIntro
+            if let offer = state.deals.first(where: { $0.id == dealID }) {
+                deal = .init(title: offer.title, valuation: offer.valuation, commission: offer.commission)
+            }
+        } else {
+            intent = .greeting
+        }
+
+        let priorTurns: [PersonaChatRequest.Turn] = events.prefix(index).compactMap { event in
+            switch event {
+            case .npcText:
+                return .init(role: .npc, text: displayText(for: event))
+            case let .playerText(_, text, _):
+                return .init(role: .player, text: text)
+            default:
+                return nil
+            }
+        }
+
+        return PersonaChatRequest(
+            npc: .init(id: profile.id, name: profile.name, role: profile.role, persona: profile.persona),
+            history: Array(priorTurns.suffix(historyWindow)),
+            intent: intent,
+            deal: deal,
+            playerMessage: playerMessage
+        )
+    }
+
+    /// 测试辅助：等待某线程当前投递任务跑完（含生成式增强）。
+    func awaitDelivery(npcID: String) async {
+        await deliveryTasks[npcID]?.value
     }
 
     private func persist() {

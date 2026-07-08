@@ -22,6 +22,12 @@ struct RainmakerRootView: View {
         }
         .tint(WA.accent)
         .task { gameCenter.authenticate() }
+        .task {
+            // 生成式对话接入：Info.plist 配了才接（默认关闭 = 台词池）。
+            if store.personaChat == nil {
+                store.personaChat = PersonaChatConfig.fromInfoPlist().makeClient()
+            }
+        }
         .overlay {
             if store.state.isGameOver {
                 GameOverView(store: store)
