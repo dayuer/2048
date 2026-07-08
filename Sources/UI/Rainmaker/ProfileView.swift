@@ -4,6 +4,7 @@ import SwiftUI
 struct ProfileView: View {
     @Bindable var store: RainmakerStore
     @State private var confirmRestart = false
+    @State private var confirmEndDay = false
 
     /// 职场进阶线：信誉决定职级（后续按职级解锁卡池与高阶对手）。
     private var rankTitle: String {
@@ -33,9 +34,26 @@ struct ProfileView: View {
                     .padding(.vertical, 6)
                 }
 
+                // 经营面板：核心资源全在这里（消息页保持纯聊天）
+                Section("经营面板") {
+                    ResourceBar(state: store.state)
+                        .listRowInsets(EdgeInsets())
+
+                    Button {
+                        confirmEndDay = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "moon.zzz.fill")
+                            Text(store.state.ap == 0 ? "工时用尽 · 结束今日" : "结束今日（剩 \(store.state.ap) 工时）")
+                        }
+                    }
+                    .buttonStyle(WAPrimaryButtonStyle())
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+
                 Section("本局") {
-                    LabeledContent("资金", value: "\(store.state.cash) 万")
-                    LabeledContent("信誉", value: "\(store.state.reputation)")
                     LabeledContent("已成交项目", value: "\(store.state.deals.filter { $0.status == .won }.count) 单")
                     LabeledContent("话术卡库", value: "\(store.state.cardInventory?.count ?? 0)/\(RainmakerBalance.cardInventoryCap)")
                     LabeledContent("绝密档案", value: "\(store.state.unlockedArchives?.count ?? 0)/\(ArchiveCatalog.all.count)")
@@ -59,6 +77,14 @@ struct ProfileView: View {
         ) {
             Button("重新开局", role: .destructive) { store.restart() }
             Button("取消", role: .cancel) {}
+        }
+        .confirmationDialog(
+            "结束第 \(store.state.day) 天？未接的项目会作废，固定开销 \(RainmakerBalance.burnRate) 万照扣。",
+            isPresented: $confirmEndDay,
+            titleVisibility: .visible
+        ) {
+            Button("结束今日并结算", role: .destructive) { store.endDay() }
+            Button("再想想", role: .cancel) {}
         }
     }
 }

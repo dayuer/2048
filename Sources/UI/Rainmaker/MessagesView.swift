@@ -18,8 +18,6 @@ struct MessagesView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                ResourceBar(state: store.state)
-
                 List {
                     filterChips
                         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
@@ -42,8 +40,6 @@ struct MessagesView: View {
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "搜索"
                 )
-
-                endDayBar
             }
             .background(WA.listBg)
             .navigationTitle("消息")
@@ -54,7 +50,10 @@ struct MessagesView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Button("结束今日", systemImage: "moon.zzz") { confirmEndDay = true }
+                        Button(
+                            store.state.ap == 0 ? "结束今日（工时已用尽）" : "结束今日（剩 \(store.state.ap) 工时）",
+                            systemImage: "moon.zzz"
+                        ) { confirmEndDay = true }
                         Button("重新开局", systemImage: "arrow.counterclockwise", role: .destructive) {
                             confirmRestart = true
                         }
@@ -127,23 +126,6 @@ struct MessagesView: View {
         }
     }
 
-    /// 结束今日：工时用尽时高亮催促（PRD：工时耗尽必须结束今日）。
-    private var endDayBar: some View {
-        Button {
-            confirmEndDay = true
-        } label: {
-            HStack {
-                Image(systemName: "moon.zzz.fill")
-                Text(store.state.ap == 0 ? "工时用尽 · 结束今日" : "结束今日（剩 \(store.state.ap) 工时）")
-            }
-        }
-        .buttonStyle(WAPrimaryButtonStyle())
-        .opacity(store.state.ap == 0 ? 1 : 0.85)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(WA.listBg)
-        .overlay(alignment: .top) { WA.separator.frame(height: 0.5) }
-    }
 }
 
 /// WhatsApp 式线程行：头像 + 名字 + 最后一条预览（我方带 ✓✓）+ 时间 + 未读角标。
