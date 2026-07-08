@@ -9,18 +9,18 @@ struct DiscoverView: View {
                 Section {
                     NavigationLink {
                         GameView()
-                            .navigationTitle("深度工作")
+                            .navigationTitle("财务数据重组沙盘")
                             .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         row(
                             icon: "brain.head.profile",
                             tint: Color(red: 0.95, green: 0.60, blue: 0.28),
-                            title: "深度工作",
-                            subtitle: "2048 复盘 · 不耗精力"
+                            title: "财务数据重组沙盘",
+                            subtitle: "逻辑推演训练 · 不耗尽调工时"
                         )
                     }
                 } footer: {
-                    Text("在棋盘里深度思考。合成高级数字触发「顿悟」，掉落谈判话术——即将开放。")
+                    Text("在数字重组中训练结构化思维。达成高阶重组解锁「商业绝密档案」与谈判策略——即将开放。")
                 }
 
                 Section {

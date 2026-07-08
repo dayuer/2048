@@ -28,7 +28,7 @@ enum RainmakerEngine {
         append(
             .npcText(
                 id: uuid(using: &rng),
-                text: "老板，联系人都帮你约好了。接单花精力（AP），精力用完记得【结束今日】结算。",
+                text: "老板，联系人都帮你约好了。接单消耗尽调工时，工时用完记得【结束今日】结算。",
                 at: now
             ),
             to: assistantNPCID, in: &state
@@ -96,7 +96,7 @@ enum RainmakerEngine {
         if state.cash <= 0 {
             state.isGameOver = true
             append(.npcText(id: uuid(using: &rng),
-                            text: "老板……账上没钱了，房东在楼下等你。这行，咱们出局了。",
+                            text: "老板……账上没钱了，职场信用已破产。本期实战到此为止，复盘后重来吧。",
                             at: now),
                    to: assistantNPCID, in: &state)
             return

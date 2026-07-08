@@ -24,7 +24,7 @@ targets:
     info:
       path: Sources/App/Info.plist
       properties:
-        CFBundleDisplayName: "顶级掮客"
+        CFBundleDisplayName: "FA 实战模拟营"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations~iphone:
           - UIInterfaceOrientationPortrait

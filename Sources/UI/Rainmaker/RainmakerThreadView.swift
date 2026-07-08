@@ -154,7 +154,7 @@ private struct DealCardBubble: View {
         switch deal.status {
         case .offered:
             Button(action: onAccept) {
-                Text(ap >= deal.apCost ? "接单（-\(deal.apCost) 精力）" : "精力不足")
+                Text(ap >= deal.apCost ? "接单（-\(deal.apCost) 工时）" : "尽调工时不足")
                     .font(.system(size: 15, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)

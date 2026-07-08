@@ -48,7 +48,7 @@ struct MessagesView: View {
         } label: {
             HStack {
                 Image(systemName: "moon.zzz.fill")
-                Text(store.state.ap == 0 ? "精力耗尽 · 结束今日" : "结束今日（剩 \(store.state.ap) 精力）")
+                Text(store.state.ap == 0 ? "工时用尽 · 结束今日" : "结束今日（剩 \(store.state.ap) 工时）")
             }
         }
         .buttonStyle(WAPrimaryButtonStyle())

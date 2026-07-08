@@ -5,6 +5,16 @@ struct ProfileView: View {
     @Bindable var store: RainmakerStore
     @State private var confirmRestart = false
 
+    /// 职场进阶线：信誉决定职级（后续按职级解锁卡池与高阶对手）。
+    private var rankTitle: String {
+        switch store.state.reputation {
+        case ..<60: "青铜 FA"
+        case ..<90: "白银 FA"
+        case ..<130: "黄金 FA"
+        default: "王者 FA"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -12,10 +22,10 @@ struct ProfileView: View {
                     HStack(spacing: 14) {
                         WAAvatar(systemImage: "briefcase.fill", background: .indigo, size: 56)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("顶级掮客")
+                            Text(rankTitle)
                                 .font(.system(size: 19, weight: .semibold))
                                 .foregroundStyle(WA.textPrimary)
-                            Text("独立财务顾问 · 第 \(store.state.day) 天")
+                            Text("独立财务顾问 · 实战第 \(store.state.day) 天")
                                 .font(.system(size: 13))
                                 .foregroundStyle(WA.textSecondary)
                         }

@@ -43,7 +43,7 @@ struct ResourceBar: View {
                  label: "信誉", value: "\(state.reputation)")
             divider
             stat(icon: "bolt.fill", tint: state.ap > 0 ? .yellow : .gray,
-                 label: "精力", value: "\(state.ap)/\(RainmakerBalance.apPerDay)")
+                 label: "尽调工时", value: "\(state.ap)/\(RainmakerBalance.apPerDay)")
             divider
             stat(icon: "calendar", tint: WA.accent,
                  label: "天数", value: "第 \(state.day) 天")
