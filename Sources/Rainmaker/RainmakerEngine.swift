@@ -17,13 +17,9 @@ enum RainmakerEngine {
             deals: [],
             threads: []
         )
-        append(
-            .systemNotice(
-                id: uuid(using: &rng),
-                text: "欢迎来京。账上 \(state.cash) 万，身上背着 \(RainmakerBalance.startDebt) 万过桥资金（日息一成）——\(RainmakerBalance.deadlineDay) 天内还清债务并活下来。",
-                at: now
-            ),
-            to: assistantNPCID, in: &state
+        notify(
+            "欢迎来京。账上 \(state.cash) 万，欠衡颂资本 \(RainmakerBalance.startDebt) 万过桥资金（日罚息一成）——\(RainmakerBalance.deadlineDay) 天内完成回购并活下来。",
+            in: &state, using: &rng, at: now
         )
         append(
             .npcText(
@@ -44,7 +40,7 @@ enum RainmakerEngine {
         append(
             .npcText(
                 id: uuid(using: &rng),
-                text: "娃，到北京了吧？\(RainmakerBalance.startDebt) 万可是村里人凑的，日息一成，\(RainmakerBalance.deadlineDay) 天内还清。混好了荣归故里，混不好……村里人都看着你呢。",
+                text: "落地了？\(RainmakerBalance.startDebt) 万已到账。回购协议第 4.2 条：\(RainmakerBalance.deadlineDay) 天，日罚息一成，个人无限连带担保——字是你签的。赢了，会所香槟我请；输了，被执行人名单、限高令，一样不会少。条款写得很清楚。",
                 at: now
             ),
             to: NPCCatalog.creditor.id, in: &state
@@ -100,10 +96,8 @@ enum RainmakerEngine {
         }
 
         state.cash -= RainmakerBalance.burnRate
-        append(.systemNotice(id: uuid(using: &rng),
-                             text: "第 \(state.day) 天结束：固定开销 -\(RainmakerBalance.burnRate) 万，余额 \(state.cash) 万。",
-                             at: now),
-               to: assistantNPCID, in: &state)
+        notify("第 \(state.day) 天结束：固定开销 -\(RainmakerBalance.burnRate) 万，余额 \(state.cash) 万。",
+               in: &state, using: &rng, at: now)
 
         if state.cash <= 0 {
             state.isGameOver = true
@@ -115,7 +109,7 @@ enum RainmakerEngine {
             return
         }
 
-        // 浮生记结算：滚债息/生存息/村长催债/健康判定 → 40 天大限
+        // 浮生记结算：滚债息/生存息/资方催收/健康判定 → 40 天大限
         if TradeEngine.dailyDebtAndHealthTick(state: &state, using: &rng, now: now) { return }
         if TradeEngine.settleDeadlineIfDue(state: &state, using: &rng, now: now) { return }
 
@@ -139,6 +133,17 @@ enum RainmakerEngine {
               let dealer = NPCCatalog.profile(id: venue.dealerID),
               let line = dealer.smallTalk.randomElement(using: &rng) else { return }
         append(.npcText(id: uuid(using: &rng), text: line, at: now), to: dealer.id, in: &state)
+    }
+
+    /// 系统旁白出口：不进聊天线程，落通知日志——UI 弹应用内横幅 + 通知中心可回看。
+    /// （NegotiationEngine / WorldEventScheduler / TradeEngine / EpiphanyEngine 共用）
+    static func notify(
+        _ text: String, in state: inout RainmakerState,
+        using rng: inout some RandomNumberGenerator, at now: Date
+    ) {
+        var log = state.notices ?? []
+        log.append(SystemNotice(id: uuid(using: &rng), text: text, at: now))
+        state.notices = log
     }
 
     /// 追加事件；线程不存在则新建。（NegotiationEngine / WorldEventScheduler 共用）

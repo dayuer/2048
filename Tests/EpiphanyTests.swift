@@ -65,13 +65,12 @@ final class EpiphanyTests: XCTestCase {
         XCTAssertEqual(state.cardInventory?.count, RainmakerBalance.cardInventoryCap)
     }
 
-    func testEpiphanyLeavesNoticeInAssistantThread() {
+    func testEpiphanyLeavesNoticeInLog() {
         var state = newRun()
         var rng = SeededGenerator(seed: 1)
-        let before = state.threads.first { $0.id == RainmakerEngine.assistantNPCID }?.events.count ?? 0
+        let before = state.noticeLog.count
         _ = EpiphanyEngine.recordMilestone(128, state: &state, using: &rng, now: day0)
-        let after = state.threads.first { $0.id == RainmakerEngine.assistantNPCID }?.events.count ?? 0
-        XCTAssertGreaterThan(after, before, "顿悟要在助理线程留痕（聊天即界面）")
+        XCTAssertGreaterThan(state.noticeLog.count, before, "顿悟要在通知日志留痕（横幅+通知中心）")
     }
 
     // MARK: - 卡库 → 谈判手牌

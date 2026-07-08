@@ -35,7 +35,7 @@ enum RainmakerBalance {
 
     // MARK: 浮生记线（数值锚定原版：2000/5000/日息10%/容量100/40天）
 
-    /// 欠赵村长的过桥资金（万）。
+    /// 欠衡颂资本沈墨的过桥资金（万）。
     static let startDebt = 5000
     /// 债务日息（每天结算时滚入本金）。
     static let debtDailyRate = 0.10
@@ -54,7 +54,7 @@ enum RainmakerBalance {
     static let healCostPerPoint = 3500
     /// 卖出涉灰资产每笔扣的信誉。
     static let greySellRepPenalty = 1
-    /// 债务逾期（后期未清）时老乡上门的健康伤害。
+    /// 债务逾期（后期未清）时资方保全+连番质询的健康伤害。
     static let overdueBeatingDamage = 25
 }
 
@@ -62,7 +62,7 @@ enum RainmakerBalance {
 enum RunOutcome: String, Codable, Sendable {
     case bankrupt        // 现金归零（原有破产）
     case beaten          // 健康归零，牺牲在北京街头
-    case debtUnpaid      // 40 天到期债没还清，被老乡「处理」
+    case debtUnpaid      // 40 天到期债没还清，上被执行人名单 + 限高
     case victory         // 40 天到期且无债——上岸，按净资产登榜
 }
 
@@ -87,7 +87,16 @@ struct DealOffer: Codable, Equatable, Identifiable, Sendable {
     var status: Status
 }
 
+/// 一条系统旁白（世界事件 / 每日结算 / 谈判记分 / 复盘报告）。
+/// 不进聊天线程——UI 以应用内通知横幅即时弹出，并落「系统通知」中心可回看。
+struct SystemNotice: Codable, Equatable, Identifiable, Sendable {
+    let id: UUID
+    let text: String
+    let at: Date
+}
+
 /// NPC 线程里的一条事件。Phase 1 四态；Phase 2 牌局在此扩展。
+/// systemNotice 已废弃不再产生（旁白改走 SystemNotice 通知），保留 case 以解码旧存档。
 enum RainmakerEvent: Codable, Equatable, Identifiable, Sendable {
     case npcText(id: UUID, text: String, at: Date)
     case playerText(id: UUID, text: String, at: Date)
@@ -147,13 +156,17 @@ struct RainmakerState: Codable, Equatable, Sendable {
     var unlockedArchives: [String]?
     /// 市场气候（世界观宏观变量）。Optional 兼容旧存档，读取一律走 climate。
     var marketClimate: MarketClimate?
+    /// 系统通知日志（旧→新追加在尾部）。Optional 兼容旧存档，读取走 noticeLog。
+    var notices: [SystemNotice]?
+    /// 已读通知数（通知中心角标 = 总数 − 已读数）。
+    var noticesReadCount: Int?
 
     /// 当前气候，缺省中性。
     var climate: MarketClimate { marketClimate ?? .neutral }
 
     // MARK: 浮生记线（全部 Optional 兼容旧存档，读取走带默认值的访问器）
 
-    /// 欠赵村长的债（万），每日滚息。
+    /// 欠沈墨的债（万），每日滚息。
     var debt: Int?
     /// 当前所在圈子 id。
     var venueID: String?
@@ -198,6 +211,42 @@ struct RainmakerState: Codable, Equatable, Sendable {
         self.deals = deals
         self.threads = threads
         self.activeNegotiation = activeNegotiation
+    }
+
+    // MARK: 系统通知
+
+    var noticeLog: [SystemNotice] { notices ?? [] }
+    var unreadNoticeCount: Int { max(0, noticeLog.count - (noticesReadCount ?? 0)) }
+
+    /// 打开通知中心即全部已读。
+    mutating func markNoticesRead() {
+        noticesReadCount = noticeLog.count
+    }
+
+    /// 旧存档迁移：债主换角「赵村长」(cunzhang) → 「沈墨」(shen)，线程与已读游标一起搬。
+    mutating func migrateCreditorIDIfNeeded() {
+        let oldID = "cunzhang"
+        guard let index = threads.firstIndex(where: { $0.id == oldID }) else { return }
+        threads[index] = NPCThread(id: NPCCatalog.creditor.id, events: threads[index].events)
+        if var counts = readCounts, let read = counts.removeValue(forKey: oldID) {
+            counts[NPCCatalog.creditor.id] = read
+            readCounts = counts
+        }
+    }
+
+    /// 旧存档迁移：聊天线程里的 systemNotice 全部搬进通知日志（记为已读，不补弹横幅）。
+    mutating func migrateThreadNoticesIfNeeded() {
+        var migrated: [SystemNotice] = []
+        for index in threads.indices {
+            threads[index].events.removeAll { event in
+                guard case let .systemNotice(id, text, at) = event else { return false }
+                migrated.append(SystemNotice(id: id, text: text, at: at))
+                return true
+            }
+        }
+        guard !migrated.isEmpty else { return }
+        notices = (noticeLog + migrated).sorted { $0.at < $1.at }
+        noticesReadCount = (noticesReadCount ?? 0) + migrated.count
     }
 
     // MARK: 未读

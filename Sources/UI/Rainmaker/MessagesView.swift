@@ -24,6 +24,14 @@ struct MessagesView: View {
                         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         .listRowSeparator(.hidden)
 
+                    // 置顶「系统通知」入口（微信服务通知形态）：旁白不进聊天，都归这里
+                    ZStack {
+                        NavigationLink(value: NoticeRoute.center) { EmptyView() }.opacity(0)
+                        NoticeCenterRow(store: store)
+                    }
+                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                    .listRowSeparatorTint(WA.separator)
+
                     ForEach(threads) { thread in
                         ZStack {
                             // 隐形跳转层：去掉系统 chevron（WhatsApp 行没有箭头）
@@ -48,6 +56,9 @@ struct MessagesView: View {
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: String.self) { npcID in
                 RainmakerThreadView(store: store, npcID: npcID)
+            }
+            .navigationDestination(for: NoticeRoute.self) { _ in
+                NoticeCenterView(store: store)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

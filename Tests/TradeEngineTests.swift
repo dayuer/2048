@@ -88,9 +88,9 @@ final class TradeEngineTests: XCTestCase {
         XCTAssertEqual(paid, RainmakerBalance.startDebt, "多还 clamp 到欠款")
         XCTAssertEqual(state.currentDebt, 0)
         guard case let .npcText(_, text, _)? = state.threads.first(where: { $0.id == NPCCatalog.creditor.id })?.events.last else {
-            return XCTFail("村长该表态")
+            return XCTFail("资方该表态")
         }
-        XCTAssertTrue(text.contains("账清了"))
+        XCTAssertTrue(text.contains("回购协议履行完毕"))
     }
 
     func testBankDepositWithdraw() {
@@ -131,8 +131,8 @@ final class TradeEngineTests: XCTestCase {
         var state = newRun()
         let day = state.day
         var rng = SeededGenerator(seed: 3)
-        TradeEngine.travel(to: "jrj", state: &state, using: &rng, now: day0)
-        XCTAssertEqual(state.currentVenueID, "jrj")
+        TradeEngine.travel(to: "sh", state: &state, using: &rng, now: day0)
+        XCTAssertEqual(state.currentVenueID, "sh")
         XCTAssertEqual(state.day, day + 1, "奔走一个圈子 = 一天")
         XCTAssertEqual(state.assetPrices?.count, TradeCatalog.assets.count - 3, "到新圈子重滚行情")
     }

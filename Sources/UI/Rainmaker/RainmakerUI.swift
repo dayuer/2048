@@ -2,10 +2,11 @@ import SwiftUI
 
 /// Rainmaker UI 共用小件：NPC 配色、资源条、事件预览文案。
 enum RainmakerUI {
-    /// NPC 头像底色（assistant 走 WA 绿）。
+    /// NPC 头像底色（assistant 走 WA 绿；沈墨走金装律师的深西装蓝）。
     static func tint(for npcID: String) -> Color {
         switch npcID {
         case NPCCatalog.assistant.id: WA.accent
+        case NPCCatalog.creditor.id: Color(red: 0.16, green: 0.23, blue: 0.38)
         case "chen": Color(red: 0.29, green: 0.46, blue: 0.90)
         case "zhou": Color(red: 0.90, green: 0.49, blue: 0.20)
         case "ma": Color(red: 0.56, green: 0.35, blue: 0.86)

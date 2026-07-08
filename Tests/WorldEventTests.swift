@@ -71,11 +71,10 @@ final class WorldEventTests: XCTestCase {
         WorldEventScheduler.apply(.marketShift(to: .cold), to: &state, using: &rng, now: day0)
 
         XCTAssertEqual(state.climate, .cold, "气候被挪动")
-        let assistant = state.threads.first { $0.id == RainmakerEngine.assistantNPCID }
-        guard case let .systemNotice(_, text, _)? = assistant?.events.last else {
-            return XCTFail("应在助理线程播一条市场头条")
+        guard let notice = state.noticeLog.last else {
+            return XCTFail("应在通知日志播一条市场头条")
         }
-        XCTAssertTrue(text.contains(MarketClimate.cold.label))
+        XCTAssertTrue(notice.text.contains(MarketClimate.cold.label))
     }
 
     func testDealOfferAppendsGreetingAndCard() {

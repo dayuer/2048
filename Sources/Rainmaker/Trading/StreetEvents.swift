@@ -7,7 +7,7 @@ struct MarketNews: Equatable, Sendable {
         case surge(Int)                   // 价格 × n
         case crash(Int)                   // 价格 ÷ n
         case gift(Int)                    // 白给 n 手（受托管容量 clamp）
-        case debtGift(Int, debtCost: Int) // 村长硬卖：白给 n 手 + 记账加债
+        case debtGift(Int, debtCost: Int) // 资方硬塞：白给 n 手 + 记账加债
     }
 
     let freq: Int
@@ -68,11 +68,11 @@ enum StreetEventCatalog {
         MarketNews(freq: 160, assetID: "unicorn-stake",
                    headline: "厦门的老同学资助你两手独角兽老股！发了！！", effect: .gift(2)),
         MarketNews(freq: 45, assetID: "tail-round",
-                   headline: "专项检查扫荡后，你在黑暗角落里发现了老乡丢失的尾轮份额。", effect: .gift(6)),
+                   headline: "专项检查扫荡后，你在数据室角落里发现了别人清仓时遗落的尾轮份额。", effect: .gift(6)),
         MarketNews(freq: 35, assetID: "shell-license",
-                   headline: "你老乡回家前把几张壳公司牌照给你!", effect: .gift(4)),
+                   headline: "一位清盘离场的同行，把几张壳公司牌照留给了你！", effect: .gift(4)),
         MarketNews(freq: 140, assetID: "usd-fund",
-                   headline: "村长得知美元基金出事的消息，托人把他手里的水货份额硬卖给你，记账 2500 万。",
+                   headline: "沈墨得知美元基金出事，让法务把他手里的水货份额「按条款」转给你，记账 2500 万。",
                    effect: .debtGift(1, debtCost: 2500)),
     ]
 

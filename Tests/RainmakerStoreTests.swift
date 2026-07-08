@@ -45,6 +45,33 @@ final class RainmakerStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.state.day, store.state.day)
     }
 
+    // MARK: - 旧存档迁移
+
+    func testLegacySaveMigratesCreditorIDAndThreadNotices() throws {
+        // 手工构造旧格式存档：cunzhang 线程 + 混在聊天里的 systemNotice
+        let day0 = Date(timeIntervalSince1970: 0)
+        var legacy = RainmakerState(
+            day: 3, cash: 100, reputation: 50, ap: 4, isGameOver: false,
+            deals: [],
+            threads: [
+                NPCThread(id: "cunzhang", events: [
+                    .npcText(id: UUID(), text: "利息可不等人呐", at: day0),
+                    .systemNotice(id: UUID(), text: "第 2 天结束", at: day0),
+                ]),
+            ]
+        )
+        legacy.readCounts = ["cunzhang": 2]
+        try JSONEncoder().encode(legacy).write(to: fileURL)
+
+        let store = RainmakerStore(fileURL: fileURL)
+        XCTAssertNil(store.state.threads.first { $0.id == "cunzhang" }, "旧线程 id 应消失")
+        let creditor = store.state.threads.first { $0.id == NPCCatalog.creditor.id }
+        XCTAssertEqual(creditor?.events.count, 1, "npcText 留在线程，systemNotice 搬走")
+        XCTAssertEqual(store.state.noticeLog.map(\.text), ["第 2 天结束"], "旁白进通知日志")
+        XCTAssertEqual(store.state.unreadNoticeCount, 0, "迁移的历史通知记为已读")
+        XCTAssertEqual(store.state.readCounts?[NPCCatalog.creditor.id], 2, "已读游标跟着搬")
+    }
+
     // MARK: - 投递表现层
 
     func testLaunchRevealsAllExistingEvents() {

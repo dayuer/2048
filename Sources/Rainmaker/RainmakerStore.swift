@@ -21,6 +21,13 @@ final class RainmakerStore {
     var instantDelivery = false
     private var deliveryTasks: [String: Task<Void, Never>] = [:]
 
+    // MARK: 应用内通知横幅（表现层，不持久化）
+
+    /// 当前应弹出的横幅（只弹最新一条，其余靠通知中心角标兜底）。
+    private(set) var activeBanner: SystemNotice?
+    /// 已经弹过横幅的通知数（启动不重播历史）。
+    private var bannerBaseline = 0
+
     // MARK: 生成式对话（显示层覆盖，不持久化）
 
     /// 生成式对话接入。nil = 不接入 → 走确定性台词池（默认）。
@@ -39,10 +46,14 @@ final class RainmakerStore {
             var rng = SystemRandomNumberGenerator()
             self.state = RainmakerEngine.newRun(using: &rng, now: .now)
         }
-        // 启动不重播历史：全部标记已送达
+        // 旧存档：债主换角 + 聊天线程里的系统旁白搬进通知日志
+        state.migrateCreditorIDIfNeeded()
+        state.migrateThreadNoticesIfNeeded()
+        // 启动不重播历史：全部标记已送达 / 已弹横幅
         for thread in state.threads {
             revealedCounts[thread.id] = thread.events.count
         }
+        bannerBaseline = state.noticeLog.count
         persist()
     }
 
@@ -179,6 +190,8 @@ final class RainmakerStore {
         typingNPCIDs = []
         revealedCounts = [:]
         generatedText = [:]
+        activeBanner = nil
+        bannerBaseline = 0
         state = RainmakerEngine.newRun(using: &rng, now: .now)
         commit()
     }
@@ -212,9 +225,9 @@ final class RainmakerStore {
                 }
                 return visibleEvents(npcID: thread.id).contains { event in
                     switch event {
-                    case let .npcText(_, text, _), let .playerText(_, text, _), let .systemNotice(_, text, _):
+                    case let .npcText(_, text, _), let .playerText(_, text, _):
                         text.localizedCaseInsensitiveContains(trimmed)
-                    case .dealOffer:
+                    case .dealOffer, .systemNotice:
                         false
                     }
                 }
@@ -258,12 +271,34 @@ final class RainmakerStore {
         persist()
     }
 
+    // MARK: - 系统通知
+
+    /// 打开通知中心：全部已读。
+    func markNoticesRead() {
+        state.markNoticesRead()
+        persist()
+    }
+
+    /// 横幅到时自动收起 / 用户上滑关闭。
+    func dismissBanner() {
+        activeBanner = nil
+    }
+
+    /// 引擎新写入的通知里，弹最新一条做横幅（其余靠通知中心角标）。
+    private func publishBanner() {
+        let log = state.noticeLog
+        guard log.count > bannerBaseline else { return }
+        bannerBaseline = log.count
+        activeBanner = log.last
+    }
+
     // MARK: - 私有
 
-    /// 引擎改动后统一出口：落盘 + 调度投递。
+    /// 引擎改动后统一出口：落盘 + 调度投递 + 弹通知横幅。
     private func commit() {
         persist()
         scheduleDelivery()
+        publishBanner()
     }
 
     private func scheduleDelivery() {

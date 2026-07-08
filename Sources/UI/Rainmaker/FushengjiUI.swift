@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 浮生记线 UI：贩子交易面板 / 村长债务面板 / 跑市场选择器。
+/// 浮生记线 UI：贩子交易面板 / 资方债务面板 / 跑市场选择器。
 /// 全部挂在聊天详情或消息页上——交易过程 100% 长在 IM 里。
 
 // MARK: - 贩子交易面板（挂在贩子线程 composer 上方）
@@ -219,7 +219,7 @@ struct TradeTicketSheet: View {
     }
 }
 
-// MARK: - 村长债务面板（挂在村长线程 composer 上方）
+// MARK: - 资方债务面板（挂在沈墨线程 composer 上方）
 
 struct DebtPanel: View {
     @Bindable var store: RainmakerStore
@@ -229,12 +229,12 @@ struct DebtPanel: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack {
-                Label("欠村长 \(debt) 万", systemImage: "exclamationmark.triangle.fill")
+                Label("回购余额 \(debt) 万", systemImage: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(debt > 0 ? .red : WA.accent)
                     .monospacedDigit()
                 Spacer()
-                Text("日息一成 · 第 \(store.state.day)/\(RainmakerBalance.deadlineDay) 天")
+                Text("日罚息一成 · 第 \(store.state.day)/\(RainmakerBalance.deadlineDay) 天")
                     .font(.caption2)
                     .foregroundStyle(WA.textSecondary)
             }
@@ -255,7 +255,7 @@ struct DebtPanel: View {
                         .disabled(store.state.cash < 1)
                 }
             } else {
-                Text("账清了。村里人都念你的好。")
+                Text("回购完毕。圈子很小，你的信用现在很值钱。")
                     .font(.footnote)
                     .foregroundStyle(WA.accent)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -284,10 +284,15 @@ struct TravelSheet: View {
                     HStack(spacing: 12) {
                         WAAvatar(systemImage: venue.icon, background: RainmakerUI.tint(for: venue.id), size: 40)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(venue.name)
-                                .font(.body.weight(isHere ? .semibold : .regular))
-                                .foregroundStyle(WA.textPrimary)
-                            Text(NPCCatalog.profile(id: venue.dealerID).map { "\($0.name) · \($0.role)" } ?? "")
+                            HStack(spacing: 6) {
+                                Text(venue.name)
+                                    .font(.body.weight(isHere ? .semibold : .regular))
+                                    .foregroundStyle(WA.textPrimary)
+                                Text(NPCCatalog.profile(id: venue.dealerID)?.name ?? "")
+                                    .font(.footnote)
+                                    .foregroundStyle(WA.textSecondary)
+                            }
+                            Text(venue.tagline)
                                 .font(.footnote)
                                 .foregroundStyle(WA.textSecondary)
                         }
@@ -302,7 +307,7 @@ struct TravelSheet: View {
                 .listRowSeparatorTint(WA.separator)
             }
             .listStyle(.plain)
-            .navigationTitle("跑市场（奔走一地 = 一天）")
+            .navigationTitle("跑市场（飞一城 = 一天）")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

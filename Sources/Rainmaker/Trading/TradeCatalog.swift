@@ -15,13 +15,16 @@ struct TradeAsset: Identifiable, Equatable, Sendable {
     var basePrice: Int { (priceRange.lowerBound + priceRange.upperBound) / 2 }
 }
 
-/// 北京创投圈子（对标原版地铁口黑市）。每个圈子一位驻场贩子、一套当日行情。
+/// 交易城市（对标原版地铁口黑市，格局放大到全国与海外）。
+/// 每座城市一位驻场贩子、一套当日行情；飞一座城市 = 一天。
 struct TradeVenue: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     /// 驻场贩子 NPC id。
     let dealerID: String
     let icon: String
+    /// 城市定位一句话（跑市场选择器里展示，把视野讲出来）。
+    let tagline: String
 }
 
 /// 静态交易目录：资产 × 圈子。数值锚定浮生记原版（VCD 50 → 汽车 20000）。
@@ -48,21 +51,29 @@ enum TradeCatalog {
                    isGrey: false, glossaryID: "asset-unicorn-stake"),        // 进口汽车 15000+rand(15000)
     ]
 
-    // MARK: 圈子（8 个北京创投据点）
+    // MARK: 城市（北上广深杭 + 成都 + 港美：国内跑项目，上市看港美）
 
     static let venues: [TradeVenue] = [
-        TradeVenue(id: "zgc", name: "中关村", dealerID: "dealer-zgc", icon: "cpu"),
-        TradeVenue(id: "jrj", name: "金融街", dealerID: "dealer-jrj", icon: "building.columns"),
-        TradeVenue(id: "gm", name: "国贸", dealerID: "dealer-gm", icon: "building.2.crop.circle"),
-        TradeVenue(id: "wj", name: "望京", dealerID: "dealer-wj", icon: "globe.asia.australia"),
-        TradeVenue(id: "wdk", name: "五道口", dealerID: "dealer-wdk", icon: "graduationcap"),
-        TradeVenue(id: "hcc", name: "后厂村", dealerID: "dealer-hcc", icon: "laptopcomputer.and.iphone"),
-        TradeVenue(id: "yz", name: "亦庄", dealerID: "dealer-yz", icon: "gearshape.2"),
-        TradeVenue(id: "slt", name: "三里屯", dealerID: "dealer-slt", icon: "wineglass"),
+        TradeVenue(id: "bj", name: "北京", dealerID: "dealer-bj", icon: "building.columns",
+                   tagline: "政策与人脉的中心，一切故事的起点"),
+        TradeVenue(id: "sh", name: "上海", dealerID: "dealer-sh", icon: "chart.line.uptrend.xyaxis",
+                   tagline: "陆家嘴的钱，最讲规矩也最挑剔"),
+        TradeVenue(id: "gz", name: "广州", dealerID: "dealer-gz", icon: "shippingbox",
+                   tagline: "千年商都，产业和贸易的基本盘"),
+        TradeVenue(id: "sz", name: "深圳", dealerID: "dealer-sz", icon: "cpu",
+                   tagline: "硬科技前线，快鱼吃慢鱼"),
+        TradeVenue(id: "hz", name: "杭州", dealerID: "dealer-hz", icon: "cart",
+                   tagline: "电商直播之都，流量即杠杆"),
+        TradeVenue(id: "cd", name: "成都", dealerID: "dealer-cd", icon: "cup.and.saucer",
+                   tagline: "新一线纵深，茶馆里谈成的生意不少"),
+        TradeVenue(id: "hk", name: "香港", dealerID: "dealer-hk", icon: "dollarsign.circle",
+                   tagline: "港股上市窗口，离国际资本最近的地方"),
+        TradeVenue(id: "us", name: "美国", dealerID: "dealer-us", icon: "globe.americas",
+                   tagline: "美股上市窗口，把视野放长远"),
     ]
 
-    /// 开局所在圈子。
-    static let startVenueID = "zgc"
+    /// 开局所在城市。
+    static let startVenueID = "bj"
 
     static func asset(id: String) -> TradeAsset? { assets.first { $0.id == id } }
     static func venue(id: String) -> TradeVenue? { venues.first { $0.id == id } }

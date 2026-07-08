@@ -84,11 +84,9 @@ enum NegotiationEngine {
                      text: "可以谈，但我的底线在那儿摆着。", at: now),
             to: deal.npcID, in: &state
         )
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                          text: "尽调谈判开始：抵押信誉 \(RainmakerBalance.negotiationRepStake)，对方底线估值 \(defense)。",
-                          at: now),
-            to: deal.npcID, in: &state
+        RainmakerEngine.notify(
+            "尽调谈判开始：抵押信誉 \(RainmakerBalance.negotiationRepStake)，对方底线估值 \(defense)。",
+            in: &state, using: &rng, at: now
         )
         return true
     }
@@ -131,10 +129,9 @@ enum NegotiationEngine {
                          text: card.tauntWhenInvalid ?? "这套对我没用。", at: now),
                 to: session.npcID, in: &state
             )
-            RainmakerEngine.append(
-                .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                              text: "【\(card.name)】无效命中：0 分。\(card.knowledge)", at: now),
-                to: session.npcID, in: &state
+            RainmakerEngine.notify(
+                "【\(card.name)】无效命中：0 分。\(card.knowledge)",
+                in: &state, using: &rng, at: now
             )
             return finishPlayStep(session: &session, state: &state, damage: 0, invalid: true, using: &rng, now: now)
         }
@@ -149,11 +146,9 @@ enum NegotiationEngine {
         case nil: break
         }
         state.activeNegotiation = session
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                          text: "【\(card.name)】命中：\(card.chips) × \(String(format: "%.1f", card.mult)) = \(damage)，底线 \(before) → \(session.defense)。",
-                          at: now),
-            to: session.npcID, in: &state
+        RainmakerEngine.notify(
+            "【\(card.name)】命中：\(card.chips) × \(String(format: "%.1f", card.mult)) = \(damage)，底线 \(before) → \(session.defense)。",
+            in: &state, using: &rng, at: now
         )
         RainmakerEngine.append(
             .npcText(id: RainmakerEngine.uuid(using: &rng),
@@ -243,13 +238,11 @@ enum NegotiationEngine {
                      text: fullBreak ? "……行，你赢了，全按你说的办。" : "就按这个条件，签吧。", at: now),
             to: session.npcID, in: &state
         )
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                          text: fullBreak
-                              ? "完胜：击破对方底线，拿满佣金上限 +\(amount) 万，信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。"
-                              : "签约成交：佣金 +\(amount) 万（上限 \(commission)，对方底线还剩 \(remaining)%，故未拿满）。信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。",
-                          at: now),
-            to: session.npcID, in: &state
+        RainmakerEngine.notify(
+            fullBreak
+                ? "完胜：击破对方底线，拿满佣金上限 +\(amount) 万，信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。"
+                : "签约成交：佣金 +\(amount) 万（上限 \(commission)，对方底线还剩 \(remaining)%，故未拿满）。信誉 +\(RainmakerBalance.dealReputationReward)（抵押退还）。",
+            in: &state, using: &rng, at: now
         )
     }
 
@@ -270,10 +263,9 @@ enum NegotiationEngine {
                      text: "你太贪了。这单不谈了，别再联系我。", at: now),
             to: session.npcID, in: &state
         )
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                          text: postMortem(session: session, reason: reason), at: now),
-            to: session.npcID, in: &state
+        RainmakerEngine.notify(
+            postMortem(session: session, reason: reason),
+            in: &state, using: &rng, at: now
         )
     }
 

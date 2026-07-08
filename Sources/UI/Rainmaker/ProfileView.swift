@@ -55,7 +55,7 @@ struct ProfileView: View {
 
                 // 浮生面板：债务/健康/仓位/银行/医院——浮生记生存系统
                 Section("北京浮生") {
-                    LabeledContent("欠村长") {
+                    LabeledContent("欠资方") {
                         Text("\(store.state.currentDebt) 万 · 日息一成")
                             .foregroundStyle(store.state.currentDebt > 0 ? .red : WA.textSecondary)
                             .monospacedDigit()

@@ -107,10 +107,7 @@ enum EpiphanyEngine {
         }
 
         let summary = "💡 顿悟 · 合成 \(value)：" + summaryParts.joined(separator: " ")
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng), text: summary, at: now),
-            to: RainmakerEngine.assistantNPCID, in: &state
-        )
+        RainmakerEngine.notify(summary, in: &state, using: &rng, at: now)
         return EpiphanyReward(
             milestone: value, cardIDs: stored, archiveID: archiveID,
             reputationBonus: reputationBonus, summary: summary

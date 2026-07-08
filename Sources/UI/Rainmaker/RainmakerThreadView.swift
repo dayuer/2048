@@ -77,8 +77,9 @@ struct RainmakerThreadView: View {
             TextBubble(text: store.displayText(for: event), at: at, mine: false)
         case let .playerText(_, text, at):
             TextBubble(text: text, at: at, mine: true)
-        case let .systemNotice(_, text, at):
-            SystemBubble(text: text, at: at)
+        case .systemNotice:
+            // 已废弃：旁白改走通知横幅/通知中心；旧存档事件在 Store 加载时已迁移
+            EmptyView()
         case let .dealOffer(_, dealID, _):
             if let deal = store.state.deals.first(where: { $0.id == dealID }) {
                 DealCardBubble(
@@ -195,32 +196,6 @@ private struct ComposerBar: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(.thinMaterial)
-    }
-}
-
-/// 系统/小何频道消息：以左侧来消息气泡呈现（不再是居中小字），
-/// 承载世界事件 / 每日结算 / 谈判记分 / 复盘报告——统一读作「小何替你盯着」。
-private struct SystemBubble: View {
-    let text: String
-    let at: Date
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(text)
-                    .font(.callout)
-                    .foregroundStyle(WA.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(RainmakerUI.timeLabel(at))
-                    .font(.caption2)
-                    .foregroundStyle(WA.textSecondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(WA.bubbleIn)
-            .clipShape(BubbleShape(mine: false))
-            Spacer(minLength: 48)
-        }
     }
 }
 

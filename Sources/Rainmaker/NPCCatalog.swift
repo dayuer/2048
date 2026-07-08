@@ -194,133 +194,135 @@ enum NPCCatalog {
 
     // MARK: 浮生记线——债主与驻场贩子
 
-    /// 赵村长：老家高利贷债主（浮生记「村长」的创投化身），每天催债。
+    /// 沈墨：过桥资方（浮生记「村长」的金融化身），每天催收——金装律师式的优雅施压。
     static let creditor = NPCProfile(
-        id: "cunzhang",
-        name: "赵村长",
-        role: "债主 · 民间资本",
-        icon: "person.badge.shield.exclamationmark",
+        id: "shen",
+        name: "沈墨",
+        role: "资方 · 衡颂资本合伙人",
+        icon: "briefcase.fill",
         persona: NPCPersona(
-            background: "老家村长出身的民间资本大佬，借给你 5000 万过桥资金进京做掮客，日息一成。",
-            voice: "土味狠话混着人情绑架，一口一个「娃」，笑里藏刀。",
-            values: "只认钱按天到账；讲乡情，但乡情从不抵利息。",
-            quirks: "口头禅「利息可不等人呐」，威胁完总补一句「村里人都看着你呢」。",
-            negotiationStance: "不谈判：还钱是唯一话题，逾期就叫在京老乡上门。"
+            background: "红圈所非诉合伙人出身，离所创办衡颂资本做过桥与困境投资。借你 5000 万过桥资金进京做掮客——40 天回购、日罚息一成、个人无限连带担保，协议是他亲自起草的。",
+            voice: "金装律师式的优雅施压：三件套西装的措辞，永远礼貌，永远在引用条款；不骂人，只报时间和数字。",
+            values: "只认白纸黑字和到账时间；欣赏赢家，但欣赏从不折抵罚息。",
+            quirks: "口头禅「条款写得很清楚」，施压完总补一句「别逼我把这件事移交法务」。",
+            negotiationStance: "不谈判：回购是唯一议题，逾期直接申请保全、上被执行人名单、限高。"
         ),
         greetings: [],
         smallTalk: [
-            "娃，本钱是村里人凑的，别让乡亲们寒心。",
-            "利息可不等人呐，今天又滚了一成。",
-            "在北京混得咋样？混不好也得先把账清了。",
-            "别躲着我，村里人都看着你呢。",
+            "我从不催债，我只是提醒：罚息今天又滚了一成。",
+            "回购协议第 4.2 条写得很清楚——期限不因任何理由顺延。",
+            "我见过太多聪明人死在现金流上，希望你不是下一个。",
+            "赢了，会所香槟我请；输了，被执行人名单上见。你选。",
+            "别逼我把这件事移交法务，那些人没有我这么好说话。",
         ],
         dealTemplates: []
     )
 
-    /// 八大圈子的驻场贩子：每天甩当地行情，倒卖全靠他们。
+    /// 八城驻场贩子：每天甩当地行情，倒卖全靠他们。
+    /// 版图 = 北上广深杭 + 成都 + 港美——国内跑项目，上市看港美，视野放长远。
     static let dealers: [NPCProfile] = [
         NPCProfile(
-            id: "dealer-zgc", name: "老猫", role: "中关村 · 原始股贩子", icon: "cpu",
+            id: "dealer-bj", name: "老猫", role: "北京 · 原始股贩子", icon: "building.columns",
             persona: NPCPersona(
-                background: "中关村混了二十年的原始股倒爷，创业公司死活名单背得比谁都熟。",
+                background: "中关村混了二十年的原始股倒爷，创业公司死活名单背得比谁都熟，政策风向比天气预报灵。",
                 voice: "语速快、江湖黑话多，张口「哥们儿」，句句带行情。",
                 values: "只认信息差和出手速度，砸手里的货从不留过夜。",
                 quirks: "报价前先啧一声，爱说「这价儿过了这村没这店」。",
                 negotiationStance: "小单爽快，大单必掺水——货得自己验。"
             ),
             greetings: [],
-            smallTalk: ["哥们儿，今天有几手好货，看不看？", "行情一天三变，犹豫就是亏。", "中关村的地面消息，比新闻快三天。"],
+            smallTalk: ["哥们儿，今天有几手好货，看不看？", "行情一天三变，犹豫就是亏。", "北京的地面消息，比新闻快三天。"],
             dealTemplates: []
         ),
         NPCProfile(
-            id: "dealer-jrj", name: "金姐", role: "金融街 · 份额掮客", icon: "building.columns",
+            id: "dealer-sh", name: "金姐", role: "上海 · 份额掮客", icon: "chart.line.uptrend.xyaxis",
             persona: NPCPersona(
-                background: "前券商营业部老总，转行做基金份额和可转债的地下撮合。",
+                background: "前券商营业部老总，坐镇陆家嘴做基金份额和可转债的地下撮合，规矩比谁都讲。",
                 voice: "端庄客气，字斟句酌，永远像在念合规话术——但价从不含糊。",
                 values: "看重对手方履约记录，一次违约永不再做。",
                 quirks: "开头总是「按今天的口径」，结尾必补「仅供参考」。",
                 negotiationStance: "价格公道量又足，但灰色货绝不沾手（明面上）。"
             ),
             greetings: [],
-            smallTalk: ["按今天的口径，份额价有波动，仅供参考。", "金融街消息面紧，出手要合时宜。", "老客户我留了点额度。"],
+            smallTalk: ["按今天的口径，份额价有波动，仅供参考。", "陆家嘴消息面紧，出手要合时宜。", "老客户我留了点额度。"],
             dealTemplates: []
         ),
         NPCProfile(
-            id: "dealer-gm", name: "Tony 蔡", role: "国贸 · 老股中介", icon: "building.2.crop.circle",
+            id: "dealer-gz", name: "厂长", role: "广州 · 产业倒爷", icon: "shippingbox",
             persona: NPCPersona(
-                background: "外资背景的老股中介，专做独角兽老股和美元基金水单。",
-                voice: "中英夹杂，礼貌而精明，「my friend」不离口。",
-                values: "只做大票，看不上散碎生意；名声就是他的牌照。",
-                quirks: "报价用美元换算再折回人民币，显得专业。",
-                negotiationStance: "大票折扣硬，但交割干净不拖泥带水。"
-            ),
-            greetings: [],
-            smallTalk: ["My friend，今天有个 block trade，兴趣吗？", "独角兽的老股，过了窗口价格就两样了。", "国贸的咖啡贵，但消息值这个价。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
-            id: "dealer-wj", name: "朴哥", role: "望京 · 跨境倒爷", icon: "globe.asia.australia",
-            persona: NPCPersona(
-                background: "做中韩跨境生意起家，现在倒美元基金份额和海外算力。",
-                voice: "豪爽带口音，三句话不离「兄弟」和汇率。",
-                values: "赚汇差和信息差，最恨政策一刀切。",
-                quirks: "报价先看当天汇率牌价，爱说「过了今晚汇率就变了」。",
-                negotiationStance: "量大从优，现金为王，不赊账。"
-            ),
-            greetings: [],
-            smallTalk: ["兄弟，今天汇率合适，出手正当时。", "望京的货源，半个亚洲都认。", "过了今晚，价就不是这个价了。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
-            id: "dealer-wdk", name: "学生仔", role: "五道口 · 校园黄牛", icon: "graduationcap",
-            persona: NPCPersona(
-                background: "名校辍学生，在宇宙中心倒天使轮原始股和算力券，客户全是学弟学妹。",
-                voice: "年轻气盛，网络热梗多，动不动「家人们」。",
-                values: "信奉一夜暴富叙事，胆子比本钱大。",
-                quirks: "推销必带一句「这是下一个字节」。",
-                negotiationStance: "价格乱但偶有捡漏，风险自担。"
-            ),
-            greetings: [],
-            smallTalk: ["家人们，今天这货是下一个字节！", "五道口的消息，宿舍楼比路演厅灵。", "早买早享受，晚买哭着求。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
-            id: "dealer-hcc", name: "老K", role: "后厂村 · 码农贩子", icon: "laptopcomputer.and.iphone",
-            persona: NPCPersona(
-                background: "大厂十年老码农，副业倒算力租赁券和刷量数据包，内网消息灵通。",
-                voice: "理工直男，说话像写注释，冷幽默。",
-                values: "一切用数据说话，鄙视讲故事的。",
-                quirks: "报价精确到小数点，爱说「按我脚本回测」。",
-                negotiationStance: "价格透明童叟无欺，但灰货概不售后。"
-            ),
-            greetings: [],
-            smallTalk: ["按我脚本回测，今天算力券性价比高。", "内网都在传大模型扩容，你懂的。", "数据包这东西，用得好是增长，用不好是证据。"],
-            dealTemplates: []
-        ),
-        NPCProfile(
-            id: "dealer-yz", name: "厂长", role: "亦庄 · 产业倒爷", icon: "gearshape.2",
-            persona: NPCPersona(
-                background: "开发区老厂长，专倒壳公司牌照和产业额度，跟园区管委会熟得很。",
+                background: "珠三角老厂长，专倒壳公司牌照和产业额度，跟开发区管委会熟得很，千年商都的门路一条不落。",
                 voice: "官腔混着厂味儿，慢条斯理，「按规矩来」挂嘴边。",
                 values: "讲关系讲程序，快钱不赚，稳钱不放。",
                 quirks: "谈价先递烟（你不抽他自己点上），说「牌照这东西，懂的都懂」。",
                 negotiationStance: "壳货水深，他知道每口井的深浅。"
             ),
             greetings: [],
-            smallTalk: ["牌照这东西，懂的都懂。", "开发区风声紧的时候，货就值钱了。", "按规矩来，谁都别想快。"],
+            smallTalk: ["牌照这东西，懂的都懂。", "珠三角风声紧的时候，货就值钱了。", "按规矩来，谁都别想快。"],
             dealTemplates: []
         ),
         NPCProfile(
-            id: "dealer-slt", name: "夜场李", role: "三里屯 · 消息贩子", icon: "wineglass",
+            id: "dealer-sz", name: "老K", role: "深圳 · 码农贩子", icon: "cpu",
             persona: NPCPersona(
-                background: "三里屯夜场老板，酒桌上什么额度都能撮合，突击入股的单子多从他这儿出。",
-                voice: "油滑热络，夜场腔，「贵人」「面子」不离口。",
+                background: "南山科技园十年老码农，副业倒算力租赁券和刷量数据包，大厂内网消息灵通，信「快鱼吃慢鱼」。",
+                voice: "理工直男，说话像写注释，冷幽默。",
+                values: "一切用数据说话，鄙视讲故事的。",
+                quirks: "报价精确到小数点，爱说「按我脚本回测」。",
+                negotiationStance: "价格透明童叟无欺，但灰货概不售后。"
+            ),
+            greetings: [],
+            smallTalk: ["按我脚本回测，今天算力券性价比高。", "科技园都在传大模型扩容，你懂的。", "数据包这东西，用得好是增长，用不好是证据。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-hz", name: "学生仔", role: "杭州 · 电商黄牛", icon: "cart",
+            persona: NPCPersona(
+                background: "名校辍学生，扎在直播电商基地倒天使轮原始股和算力券，客户全是主播和运营。",
+                voice: "年轻气盛，网络热梗多，动不动「家人们」。",
+                values: "信奉一夜暴富叙事，胆子比本钱大。",
+                quirks: "推销必带一句「这是下一个字节」。",
+                negotiationStance: "价格乱但偶有捡漏，风险自担。"
+            ),
+            greetings: [],
+            smallTalk: ["家人们，今天这货是下一个字节！", "杭州的消息，直播间比路演厅灵。", "早买早享受，晚买哭着求。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-cd", name: "夜场李", role: "成都 · 消息贩子", icon: "cup.and.saucer",
+            persona: NPCPersona(
+                background: "成都酒馆茶馆两栖老板，麻将桌上什么额度都能撮合，突击入股的单子多从他这儿出。",
+                voice: "油滑热络，川味椒盐普通话，「贵人」「面子」不离口。",
                 values: "人脉即货源，酒品即人品。",
-                quirks: "谈事必约酒，说「这单看在你面子上」。",
+                quirks: "谈事必约茶或酒，说「这单看在你面子上」。",
                 negotiationStance: "高危高利，出了事他永远「不知情」。"
             ),
             greetings: [],
-            smallTalk: ["贵人，今晚有个局，来不来？", "突击入股的额度，过了窗口神仙也拿不到。", "这单看在你面子上，别外传。"],
+            smallTalk: ["贵人，今晚玉林路有个局，来不来？", "突击入股的额度，过了窗口神仙也拿不到。", "这单看在你面子上，别外传。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-hk", name: "Tony 蔡", role: "香港 · 老股中介", icon: "dollarsign.circle",
+            persona: NPCPersona(
+                background: "中环出身的老股中介，专做独角兽老股和美元基金水单，离港股上市窗口最近的人。",
+                voice: "粤语腔中英夹杂，礼貌而精明，「my friend」不离口。",
+                values: "只做大票，看不上散碎生意；名声就是他的牌照。",
+                quirks: "报价用美元换算再折回人民币，显得专业。",
+                negotiationStance: "大票折扣硬，但交割干净不拖泥带水。"
+            ),
+            greetings: [],
+            smallTalk: ["My friend，今天有个 block trade，兴趣吗？", "独角兽的老股，过了上市窗口价格就两样了。", "中环的咖啡贵，但消息值这个价。"],
+            dealTemplates: []
+        ),
+        NPCProfile(
+            id: "dealer-us", name: "朴哥", role: "美国 · 跨境倒爷", icon: "globe.americas",
+            persona: NPCPersona(
+                background: "做中美跨境生意起家，常驻纽约倒美元基金份额和海外算力，谁要赴美上市他比投行还先知道。",
+                voice: "豪爽带口音，三句话不离「兄弟」和汇率。",
+                values: "赚汇差和信息差，最恨政策一刀切。",
+                quirks: "报价先看当天汇率牌价，爱说「过了今晚汇率就变了」。",
+                negotiationStance: "量大从优，现金为王，不赊账。"
+            ),
+            greetings: [],
+            smallTalk: ["兄弟，今天汇率合适，出手正当时。", "纽约的货源，半条华尔街都认。", "过了今晚，价就不是这个价了。"],
             dealTemplates: []
         ),
     ]

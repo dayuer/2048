@@ -105,22 +105,20 @@ final class FushengjiSettlementTests: XCTestCase {
         let news = MarketNews(freq: 1, assetID: "pre-ipo", headline: "测试头条", effect: .surge(8))
         WorldEventScheduler.apply(.marketNews(news), to: &state, using: &rng, now: day0)
         XCTAssertEqual(state.assetPrices?["pre-ipo"], 40000, "价格 ×8")
-        let assistant = state.threads.first { $0.id == RainmakerEngine.assistantNPCID }
-        guard case let .systemNotice(_, text, _)? = assistant?.events.last else {
+        guard let notice = state.noticeLog.last else {
             return XCTFail("新闻要推送")
         }
-        XCTAssertTrue(text.contains("【新闻】"))
+        XCTAssertTrue(notice.text.contains("【新闻】"))
     }
 
     func testMarketNewsCrashSkipsAbsentAsset() {
         var state = newRun()
         state.assetPrices = [:]  // 今日无货
         var rng = SeededGenerator(seed: 1)
-        let before = state.threads.first { $0.id == RainmakerEngine.assistantNPCID }?.events.count ?? 0
+        let before = state.noticeLog.count
         let news = MarketNews(freq: 1, assetID: "pre-ipo", headline: "测试", effect: .crash(8))
         WorldEventScheduler.apply(.marketNews(news), to: &state, using: &rng, now: day0)
-        let after = state.threads.first { $0.id == RainmakerEngine.assistantNPCID }?.events.count ?? 0
-        XCTAssertEqual(after, before, "缺货资产的新闻不生效不推送（原版 price==0 跳过）")
+        XCTAssertEqual(state.noticeLog.count, before, "缺货资产的新闻不生效不推送（原版 price==0 跳过）")
     }
 
     func testMarketNewsGiftClampsToCapacity() {

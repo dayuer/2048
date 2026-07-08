@@ -4,6 +4,7 @@ import SwiftUI
 /// RainmakerStore 在此持有，向下注入；破产时全屏覆盖结算页。
 struct RainmakerRootView: View {
     @State private var store = RainmakerStore()
+    @State private var showNoticeCenter = false
 
     var body: some View {
         TabView {
@@ -31,6 +32,17 @@ struct RainmakerRootView: View {
                 GameOverView(store: store)
             }
         }
+        // 系统旁白横幅：iOS 通知形态，压在一切内容（含终局页）之上
+        .overlay(alignment: .top) {
+            NoticeBannerHost(store: store) {
+                showNoticeCenter = true
+            }
+        }
+        .sheet(isPresented: $showNoticeCenter) {
+            NavigationStack {
+                NoticeCenterView(store: store)
+            }
+        }
     }
 }
 
@@ -44,7 +56,7 @@ struct GameOverView: View {
     private var icon: String {
         switch outcome {
         case .victory: "trophy.fill"
-        case .debtUnpaid: "person.2.slash.fill"
+        case .debtUnpaid: "nosign"
         case .beaten: "cross.case.fill"
         case .bankrupt: "chart.line.downtrend.xyaxis"
         }
@@ -53,7 +65,7 @@ struct GameOverView: View {
     private var title: String {
         switch outcome {
         case .victory: "上岸！荣登浮生排行榜"
-        case .debtUnpaid: "债未还清，老乡们来了"
+        case .debtUnpaid: "被执行人名单生效，全面限高"
         case .beaten: "你倒在了北京街头"
         case .bankrupt: "职场信用破产"
         }
@@ -61,8 +73,8 @@ struct GameOverView: View {
 
     private var subtitle: String {
         switch outcome {
-        case .victory: "四十天两清，净资产 \(store.state.netWorth) 万。北京，俺征服你了。"
-        case .debtUnpaid: "还差 \(store.state.currentDebt) 万。村长说：别怪他心狠。"
+        case .victory: "四十天两清，净资产 \(store.state.netWorth) 万。会所香槟已开，嫩模在等你讲上岸的故事。"
+        case .debtUnpaid: "还差 \(store.state.currentDebt) 万。沈墨说：条款写得很清楚。"
         case .beaten: "健康归零。北京的日子，比想象中硬。"
         case .bankrupt: "现金流断裂，本期实战评估终止。复盘后再来。"
         }

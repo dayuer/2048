@@ -113,13 +113,9 @@ enum WorldEventScheduler {
         switch event {
         case let .marketShift(climate):
             state.marketClimate = climate
-            RainmakerEngine.append(
-                .systemNotice(
-                    id: RainmakerEngine.uuid(using: &rng),
-                    text: "【市场】\(climate.label)：\(climate.headline)",
-                    at: now
-                ),
-                to: RainmakerEngine.assistantNPCID, in: &state
+            RainmakerEngine.notify(
+                "【市场】\(climate.label)：\(climate.headline)",
+                in: &state, using: &rng, at: now
             )
 
         case let .dealOffer(npcID):
@@ -176,23 +172,18 @@ enum WorldEventScheduler {
         case let .gift(count):
             let granted = grantGoods(assetID: news.assetID, count: count, state: &state)
             guard granted > 0 else {
-                RainmakerEngine.append(
-                    .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                                  text: "可惜!你的托管账户太小，只能放 \(state.currentCapacity) 手。", at: now),
-                    to: RainmakerEngine.assistantNPCID, in: &state
+                RainmakerEngine.notify(
+                    "可惜!你的托管账户太小，只能放 \(state.currentCapacity) 手。",
+                    in: &state, using: &rng, at: now
                 )
                 return
             }
         case let .debtGift(count, debtCost):
-            // 村长硬卖：记账加债（原版 MyDebt += 2500），货照收（容量不够就少收）
+            // 资方硬塞抵债货：记账加债（原版 MyDebt += 2500），货照收（容量不够就少收）
             state.debt = state.currentDebt + debtCost
             _ = grantGoods(assetID: news.assetID, count: count, state: &state)
         }
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                          text: "【新闻】\(news.headline)", at: now),
-            to: RainmakerEngine.assistantNPCID, in: &state
-        )
+        RainmakerEngine.notify("【新闻】\(news.headline)", in: &state, using: &rng, at: now)
     }
 
     /// 街头事件：伤身扣健康（死亡判定在次日结算），敲诈按比例抽现金。
@@ -210,11 +201,7 @@ enum WorldEventScheduler {
             state.cash -= loss
             suffix = "你损失了 \(loss) 万。"
         }
-        RainmakerEngine.append(
-            .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                          text: incident.text + suffix, at: now),
-            to: RainmakerEngine.assistantNPCID, in: &state
-        )
+        RainmakerEngine.notify(incident.text + suffix, in: &state, using: &rng, at: now)
     }
 
     /// 白给货入库（容量 clamp，原版 addcount 语义）。返回实收手数。

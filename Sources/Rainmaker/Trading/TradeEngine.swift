@@ -57,7 +57,7 @@ enum TradeEngine {
 
     // MARK: - 还债 / 银行
 
-    /// 给村长还钱：多还不找零（clamp 到欠款与现金）。清账时村长在聊天里表态。
+    /// 给资方还钱：多还不找零（clamp 到欠款与现金）。清账时沈墨在聊天里表态。
     @discardableResult
     static func repayDebt(
         amount: Int, state: inout RainmakerState,
@@ -69,8 +69,8 @@ enum TradeEngine {
         state.cash -= paid
         state.debt = state.currentDebt - paid
         let reply = state.currentDebt == 0
-            ? "行啊娃，账清了！村里人没白信你。以后发达了别忘了乡亲们。"
-            : "收到 \(paid) 万。还剩 \(state.currentDebt) 万，利息可不等人呐。"
+            ? "尾款到账，回购协议履行完毕。和聪明人做生意就是省心——今晚会所，香槟我开好了。圈子很小，后会有期。"
+            : "到账 \(paid) 万，余额 \(state.currentDebt) 万。罚息不会等你，我也不会。"
         RainmakerEngine.append(
             .npcText(id: RainmakerEngine.uuid(using: &rng), text: reply, at: now),
             to: NPCCatalog.creditor.id, in: &state
@@ -134,12 +134,12 @@ enum TradeEngine {
 
     // MARK: - 每日浮生记结算（由 RainmakerEngine.endDay 调用）
 
-    /// 滚债息、生存息、村长催债、逾期挨打、健康判定。返回是否已终局。
+    /// 滚债息、生存息、资方催收、逾期保全、健康判定。返回是否已终局。
     static func dailyDebtAndHealthTick(
         state: inout RainmakerState,
         using rng: inout some RandomNumberGenerator, now: Date
     ) -> Bool {
-        // 债务滚息（向上取整，村长不吃亏）
+        // 债务滚息（向上取整，资方不吃亏）
         if state.currentDebt > 0 {
             state.debt = Int((Double(state.currentDebt) * (1 + RainmakerBalance.debtDailyRate)).rounded(.up))
         }
@@ -147,7 +147,7 @@ enum TradeEngine {
         if state.currentBankDeposit > 0 {
             state.bankDeposit = Int(Double(state.currentBankDeposit) * (1 + RainmakerBalance.bankDailyRate))
         }
-        // 村长催债 / 逾期上门
+        // 资方催收 / 逾期保全
         if state.currentDebt > 0 {
             let overdue = state.day >= RainmakerBalance.deadlineDay * 3 / 4
                 && state.currentDebt > RainmakerBalance.startDebt
@@ -155,7 +155,7 @@ enum TradeEngine {
                 state.health = max(0, state.currentHealth - RainmakerBalance.overdueBeatingDamage)
                 RainmakerEngine.append(
                     .npcText(id: RainmakerEngine.uuid(using: &rng),
-                             text: "娃，话都撂这儿了你还拖。老乡们「陪」你聊了聊——健康 -\(RainmakerBalance.overdueBeatingDamage)。欠债 \(state.currentDebt) 万。",
+                             text: "宽限期到了。今早资产保全函已送达你所有合作方，你在会议室被轮番质询到凌晨——健康 -\(RainmakerBalance.overdueBeatingDamage)。欠款 \(state.currentDebt) 万，条款写得很清楚。",
                              at: now),
                     to: NPCCatalog.creditor.id, in: &state
                 )
@@ -172,18 +172,16 @@ enum TradeEngine {
         if state.currentHealth <= 0 {
             state.isGameOver = true
             state.outcome = .beaten
-            RainmakerEngine.append(
-                .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                              text: "你倒在了北京街头。健康归零，本期浮生到此为止。",
-                              at: now),
-                to: RainmakerEngine.assistantNPCID, in: &state
+            RainmakerEngine.notify(
+                "你倒在了北京街头。健康归零，本期浮生到此为止。",
+                in: &state, using: &rng, at: now
             )
             return true
         }
         return false
     }
 
-    /// 40 天大限结算：债清 = 上岸登榜，没清 = 被老乡「处理」。返回是否终局。
+    /// 40 天大限结算：债清 = 上岸登榜，没清 = 被执行人 + 限高。返回是否终局。
     static func settleDeadlineIfDue(
         state: inout RainmakerState,
         using rng: inout some RandomNumberGenerator, now: Date
@@ -192,17 +190,15 @@ enum TradeEngine {
         state.isGameOver = true
         if state.currentDebt <= 0 {
             state.outcome = .victory
-            RainmakerEngine.append(
-                .systemNotice(id: RainmakerEngine.uuid(using: &rng),
-                              text: "四十天期满，债务两清——你在北京活下来了。净资产 \(state.netWorth) 万，荣登浮生排行榜。",
-                              at: now),
-                to: RainmakerEngine.assistantNPCID, in: &state
+            RainmakerEngine.notify(
+                "四十天期满，债务两清——你在北京活下来了。净资产 \(state.netWorth) 万，荣登浮生排行榜。",
+                in: &state, using: &rng, at: now
             )
         } else {
             state.outcome = .debtUnpaid
             RainmakerEngine.append(
                 .npcText(id: RainmakerEngine.uuid(using: &rng),
-                         text: "四十天了，账还差 \(state.currentDebt) 万。娃，别怪村长心狠……老乡们已经在楼下了。",
+                         text: "四十天，还差 \(state.currentDebt) 万。强制执行申请已经递上去了，限高令下午生效——以后，高铁二等座都是奢望。别怪我，条款写得很清楚。",
                          at: now),
                 to: NPCCatalog.creditor.id, in: &state
             )
