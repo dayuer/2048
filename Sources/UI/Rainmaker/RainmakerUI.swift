@@ -30,6 +30,18 @@ enum RainmakerUI {
         date.formatted(date: .omitted, time: .shortened)
     }
 
+    /// 在线状态："最后上线于" 的后缀（今天→「15:17」，昨天→「昨天 15:17」，更早→「周二 15:17」）。
+    static func presenceLabel(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if calendar.isDateInToday(date) { return time }
+        if calendar.isDateInYesterday(date) { return "昨天 \(time)" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "EEE"
+        return "\(formatter.string(from: date)) \(time)"
+    }
+
     /// 列表时间：今天→时刻，昨天→「昨天」，更早→短日期（WhatsApp 形态）。
     static func listTimeLabel(_ date: Date) -> String {
         let calendar = Calendar.current

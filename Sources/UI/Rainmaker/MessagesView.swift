@@ -4,8 +4,6 @@ import SwiftUI
 /// 叠加经营 chrome（顶部资源条 + 底部结束今日）。
 struct MessagesView: View {
     @Bindable var store: RainmakerStore
-    @State private var confirmEndDay = false
-    @State private var confirmRestart = false
     @State private var query = ""
     @State private var filter: RainmakerStore.ThreadFilter = .all
     @State private var showNewChat = false
@@ -29,6 +27,16 @@ struct MessagesView: View {
                         NavigationLink(value: NoticeRoute.center) { EmptyView() }.opacity(0)
                         NoticeCenterRow(store: store)
                     }
+                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                    .listRowSeparatorTint(WA.separator)
+
+                    // 置顶「跑市场」入口：伪装成一根置顶会话（顶栏保持 WhatsApp 原样）
+                    Button {
+                        showTravel = true
+                    } label: {
+                        TravelRow(store: store)
+                    }
+                    .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                     .listRowSeparatorTint(WA.separator)
 
@@ -61,38 +69,13 @@ struct MessagesView: View {
                 NoticeCenterView(store: store)
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Menu {
-                        Button(
-                            store.state.ap == 0 ? "结束今日（工时已用尽）" : "结束今日（剩 \(store.state.ap) 工时）",
-                            systemImage: "moon.zzz"
-                        ) { confirmEndDay = true }
-                        Button("重新开局", systemImage: "arrow.counterclockwise", role: .destructive) {
-                            confirmRestart = true
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(WA.textPrimary)
-                            .frame(width: 34, height: 34)
-                            .background(WA.separator.opacity(0.6), in: Circle())
-                    }
-                }
+                // WhatsApp 主列表顶栏原样：相机（观感）+ 绿色加号
                 ToolbarItem(placement: .topBarTrailing) {
-                    // 跑市场：奔走一个圈子 = 过一天（浮生记核心节奏）
-                    Button {
-                        showTravel = true
-                    } label: {
-                        Label(
-                            TradeCatalog.venue(id: store.state.currentVenueID)?.name ?? "跑市场",
-                            systemImage: "figure.run"
-                        )
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(WA.accent)
-                        .padding(.horizontal, 10)
-                        .frame(height: 34)
-                        .background(WA.accent.opacity(0.15), in: Capsule())
-                    }
+                    Image(systemName: "camera")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(WA.textPrimary)
+                        .frame(width: 34, height: 34)
+                        .background(WA.separator.opacity(0.6), in: Circle())
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -115,22 +98,6 @@ struct MessagesView: View {
             .sheet(isPresented: $showTravel) {
                 TravelSheet(store: store)
             }
-        }
-        .confirmationDialog(
-            "结束第 \(store.state.day) 天？未接的项目会作废，固定开销 \(RainmakerBalance.burnRate) 万照扣。",
-            isPresented: $confirmEndDay,
-            titleVisibility: .visible
-        ) {
-            Button("结束今日并结算", role: .destructive) { store.endDay() }
-            Button("再想想", role: .cancel) {}
-        }
-        .confirmationDialog(
-            "确定重新开局？当前进度将清空。",
-            isPresented: $confirmRestart,
-            titleVisibility: .visible
-        ) {
-            Button("重新开局", role: .destructive) { store.restart() }
-            Button("取消", role: .cancel) {}
         }
     }
 
@@ -217,6 +184,34 @@ private struct ThreadRow: View {
                             .background(WA.accent, in: Capsule())
                     }
                 }
+            }
+        }
+    }
+}
+
+/// 置顶「跑市场」行：伪装成置顶会话（地图头像 + 当前城市 + 定位一句话）。
+private struct TravelRow: View {
+    @Bindable var store: RainmakerStore
+
+    private var venue: TradeVenue? { TradeCatalog.venue(id: store.state.currentVenueID) }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            WAAvatar(systemImage: "map.fill", background: .teal)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("跑市场")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(WA.textPrimary)
+                    Spacer(minLength: 8)
+                    Text("当前 · \(venue?.name ?? "北京")")
+                        .font(.subheadline)
+                        .foregroundStyle(WA.accent)
+                }
+                Text(venue?.tagline ?? "飞一座城市 = 一天")
+                    .font(.subheadline)
+                    .foregroundStyle(WA.textSecondary)
+                    .lineLimit(2)
             }
         }
     }

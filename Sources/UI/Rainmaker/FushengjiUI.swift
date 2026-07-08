@@ -1,7 +1,58 @@
 import SwiftUI
 
 /// 浮生记线 UI：贩子交易面板 / 资方债务面板 / 跑市场选择器。
-/// 全部挂在聊天详情或消息页上——交易过程 100% 长在 IM 里。
+/// 军规「看不出是游戏」：面板不常驻聊天页，全部藏在 composer 的「+」附件入口后面。
+
+// MARK: - 「+」附件 sheet：行情（贩子线程）
+
+struct MarketSheet: View {
+    @Bindable var store: RainmakerStore
+    let dealerID: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                TradingPanel(store: store, dealerID: dealerID)
+                    .padding(.vertical, 8)
+            }
+            .background(WA.listBg)
+            .navigationTitle("今日行情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+// MARK: - 「+」附件 sheet：还款（资方线程）
+
+struct RepaySheet: View {
+    @Bindable var store: RainmakerStore
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                DebtPanel(store: store)
+                    .padding(.top, 8)
+                Spacer(minLength: 0)
+            }
+            .background(WA.listBg)
+            .navigationTitle("回购还款")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
+    }
+}
 
 // MARK: - 贩子交易面板（挂在贩子线程 composer 上方）
 
