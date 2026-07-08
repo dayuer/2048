@@ -123,30 +123,34 @@ struct NoticeCenterRow: View {
     }
 }
 
-/// 通知中心：全部系统旁白（新在上），进页即全部已读。
+/// 通知中心：与聊天线程同形态——涂鸦壁纸 + 信息卡片气泡，
+/// 旧→新往下排、最新一条在最底部（进页即滚到底、全部已读）。
 struct NoticeCenterView: View {
     @Bindable var store: RainmakerStore
 
-    private var notices: [SystemNotice] {
-        store.state.noticeLog.reversed()
-    }
+    private var notices: [SystemNotice] { store.state.noticeLog }
 
     var body: some View {
-        List(notices) { notice in
-            VStack(alignment: .leading, spacing: 4) {
-                Text(notice.text)
-                    .font(.callout)
-                    .foregroundStyle(WA.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(RainmakerUI.listTimeLabel(notice.at))
-                    .font(.caption2)
-                    .foregroundStyle(WA.textSecondary)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(notices) { notice in
+                        NoticeBubble(notice: notice)
+                            .id(notice.id)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
-            .padding(.vertical, 2)
-            .listRowSeparatorTint(WA.separator)
+            .background(WADoodleWallpaper())
+            .defaultScrollAnchor(.bottom)
+            .onChange(of: notices.count) {
+                store.markNoticesRead()
+                if let last = notices.last {
+                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                }
+            }
         }
-        .listStyle(.plain)
-        .background(WA.listBg)
         .overlay {
             if notices.isEmpty {
                 ContentUnavailableView("暂无通知", systemImage: "bell.slash", description: Text("世界事件、每日结算、谈判记分都会落在这里。"))
@@ -155,5 +159,29 @@ struct NoticeCenterView: View {
         .navigationTitle("系统通知")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { store.markNoticesRead() }
+    }
+}
+
+/// 通知信息卡片：与聊天来消息同款左侧气泡（带尾巴 + 时间戳）。
+private struct NoticeBubble: View {
+    let notice: SystemNotice
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(notice.text)
+                    .font(.callout)
+                    .foregroundStyle(WA.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(RainmakerUI.timeLabel(notice.at))
+                    .font(.caption2)
+                    .foregroundStyle(WA.textSecondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(WA.bubbleIn)
+            .clipShape(BubbleShape(mine: false))
+            Spacer(minLength: 48)
+        }
     }
 }
