@@ -197,6 +197,7 @@ private struct DealCardBubble: View {
 /// PRD 4.2/4.3：出牌算分 chips × mult，见好就收 vs 继续压价（爆仓风险）。
 private struct NegotiationPanel: View {
     @Bindable var store: RainmakerStore
+    @State private var glossaryEntry: GlossaryEntry?
 
     private var session: NegotiationSession? { store.state.activeNegotiation }
 
@@ -227,7 +228,9 @@ private struct NegotiationPanel: View {
                                 Button {
                                     store.play(cardID: cardID)
                                 } label: {
-                                    StrategyCardFace(card: card)
+                                    StrategyCardFace(card: card) {
+                                        glossaryEntry = Glossary.entry(id: card.glossaryID)
+                                    }
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -252,20 +255,33 @@ private struct NegotiationPanel: View {
             }
             .padding(12)
             .background(.thinMaterial)
+            .sheet(item: $glossaryEntry) { entry in
+                GlossarySheet(entry: entry)
+            }
         }
     }
 }
 
-/// 策略包卡面：名称 + 筹码×倍率 + 特效角标。
+/// 策略包卡面：名称 + 筹码×倍率 + 特效角标 + ⓘ 词条入口。
 private struct StrategyCardFace: View {
     let card: TalkCard
+    let onInfo: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(card.name)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(WA.textPrimary)
-                .lineLimit(1)
+            HStack(spacing: 4) {
+                Text(card.name)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(WA.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Button(action: onInfo) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(WA.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
             HStack(spacing: 4) {
                 Text("\(card.chips)")
                     .font(.system(size: 15, weight: .bold))
